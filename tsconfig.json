@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+      "target": "es6",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "moduleResolution": "node",
+      "types": ["node", "chai", "chai-http", "mocha"],
+      "baseUrl": ".",
+      "paths": {
+          "*": ["node_modules/*"]
+      }
+  },
+  "include": ["src/**/*", "test/**/*"]
+}
