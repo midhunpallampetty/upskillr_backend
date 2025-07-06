@@ -1,29 +1,28 @@
-// src/controllers/schoolDbController.ts
+// src/controllers/schoolDb.controller.ts
 import { Request, Response } from 'express';
-import { connectToSchoolDB } from '../config/connectionManager'; // ✅ Use the correct import
-import { getSchoolMetaModel } from '../models/schools/schoolMeta.model';
+import { SchoolDbService } from '../services/schoolDb.service';
 
-export const initSchoolDb = async (req: Request, res: Response): Promise<any> => {
-  const { subDomain } = req.query;
+export class SchoolDbController {
+  private schoolDbService: SchoolDbService;
 
-  if (!subDomain || typeof subDomain !== 'string') {
-    return res.status(400).json({ msg: '❌ Missing or invalid subdomain' });
+  constructor() {
+    this.schoolDbService = new SchoolDbService();
   }
 
-  try {
-    const slug = subDomain.split('.')[0].toLowerCase(); // e.g., gamersclub
-    const dbConn = await connectToSchoolDB(slug); // ✅ Corrected function name
-    const SchoolMeta = getSchoolMetaModel(dbConn);
+  public initSchoolDb = async (req: Request, res: Response): Promise<void> => {
+    const { subDomain } = req.query;
 
-    // Check if already initialized
-    const exists = await SchoolMeta.findOne();
-    if (!exists) {
-      await SchoolMeta.create({ info: `Initialized for ${slug}` });
+    if (!subDomain || typeof subDomain !== 'string') {
+      res.status(400).json({ msg: '❌ Missing or invalid subdomain' });
+      return;
     }
 
-    return res.status(200).json({ msg: `✅ Connected to DB for ${slug}` });
-  } catch (err) {
-    console.error('❌ Failed to init school DB:', err);
-    return res.status(500).json({ msg: '❌ Failed to connect to school DB' });
-  }
-};
+    try {
+      const slug = await this.schoolDbService.initializeSchoolDb(subDomain);
+      res.status(200).json({ msg: `✅ Connected to DB for ${slug}` });
+    } catch (error) {
+      console.error('❌ Failed to init school DB:', error);
+      res.status(500).json({ msg: '❌ Failed to connect to school DB' });
+    }
+  };
+}

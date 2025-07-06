@@ -1,54 +1,31 @@
+// src/controllers/admin.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { Admin } from '../models/admin.model';
-import { hashPassword, comparePassword } from '../utils/hash';
+import { AdminService } from '../services/admin.service';
 
-// Define the handler type explicitly
-const registerAdmin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-    console.log(req.body);
-    
-    const existing = await Admin.findOne({ email });
-    if (existing) {
-      res.status(400).json({ msg: 'Admin already exists' });
-      return;
-    }
+export class AdminController {
+  private adminService: AdminService;
 
-    const hashed = await hashPassword(password);
-    const admin = await Admin.create({ email, password: hashed });
-    res.status(201).json({ msg: 'Admin registered', admin });
-  } catch (err) {
-    res.status(500).json({ msg: 'Error registering admin' });
+  constructor() {
+    this.adminService = new AdminService();
   }
-};
 
-const loginAdmin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-    const admin = await Admin.findOne({ email });
-    if (!admin) {
-      res.status(404).json({ msg: 'Admin not found' });
-      return;
+  registerAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+      const admin = await this.adminService.registerAdmin(email, password);
+      res.status(201).json({ msg: 'Admin registered', admin });
+    } catch (err: any) {
+      res.status(400).json({ msg: err.message || 'Error registering admin' });
     }
+  };
 
-    const isMatch = await comparePassword(password, admin.password);
-    if (!isMatch) {
-      res.status(400).json({ msg: 'Invalid credentials' });
-      return;
+  loginAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+      const admin = await this.adminService.loginAdmin(email, password);
+      res.status(200).json({ msg: 'Admin logged in', admin });
+    } catch (err: any) {
+      res.status(400).json({ msg: err.message || 'Login error' });
     }
-
-    res.status(200).json({ msg: 'Admin logged in', admin });
-  } catch (err) {
-    res.status(500).json({ msg: 'Login error' });
-  }
-};
-
-export default { registerAdmin, loginAdmin };
+  };
+}

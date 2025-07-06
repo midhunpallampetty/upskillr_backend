@@ -6,4 +6,6 @@ export default interface SchoolBody {
   coverImage?: string;
   address: string;
   officialContact: string;
+  email:string;
+  password:string;
 }

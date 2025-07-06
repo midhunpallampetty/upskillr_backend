@@ -1,0 +1,70 @@
+.
+├── package.json
+├── package-lock.json
+├── src
+│   ├── apps
+│   │   ├── adminApp.ts
+│   │   ├── courseApp.ts
+│   │   ├── schoolApp.ts
+│   │   └── studentApp.ts
+│   ├── app.ts
+│   ├── chai-http.d.ts
+│   ├── config
+│   │   ├── connectionManager.ts
+│   │   └── db.ts
+│   ├── controllers
+│   │   ├── admin.controller.ts
+│   │   ├── school.controller.ts
+│   │   ├── school.course.controller.ts
+│   │   ├── schoolDb.controller.ts
+│   │   └── student.controller.ts
+│   ├── middlewares
+│   │   ├── logger.js
+│   │   └── logger.ts
+│   ├── models
+│   │   ├── admin.model.ts
+│   │   ├── school.model.ts
+│   │   ├── schools
+│   │   │   ├── school.course.model.js
+│   │   │   ├── school.course.model.ts
+│   │   │   ├── schoolMeta.model.js
+│   │   │   ├── schoolMeta.model.ts
+│   │   │   ├── section.model.js
+│   │   │   ├── section.model.ts
+│   │   │   ├── video.model.js
+│   │   │   └── video.model.ts
+│   │   ├── school.SchoolSession.ts
+│   │   ├── student.model.ts
+│   │   └── utils.ts
+│   ├── repositories
+│   ├── routes
+│   │   ├── admin.routes.ts
+│   │   ├── school.course.routes.ts
+│   │   ├── school.routes.ts
+│   │   └── student.routes.ts
+│   ├── server.ts
+│   ├── services
+│   ├── types
+│   │   ├── chai-http.d.ts
+│   │   ├── LoginBody.ts
+│   │   ├── MailOptions.ts
+│   │   ├── SchoolBody.ts
+│   │   ├── StudentBody.ts
+│   │   └── updateSchoolBody.ts
+│   └── utils
+│       ├── getSchoolModel.ts
+│       ├── hash.ts
+│       ├── jwt.ts
+│       ├── logger.ts
+│       └── sendEmail.ts
+├── structure.txt
+├── test
+│   ├── chai-http.d.ts
+│   └── controllers
+│       ├── getAllSchools.test.js
+│       ├── getAllSchools.test.ts
+│       ├── schoolCourse.test.js
+│       └── schoolCourse.test.ts
+└── tsconfig.json
+
+15 directories, 53 files

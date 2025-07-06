@@ -1,13 +1,26 @@
 import express from 'express';
-import { registerSchool, loginSchool,getAllSchools,updateSchool,getSchoolBySubdomain ,createSchoolDatabase} from '../controllers/school.controller';
-import {initSchoolDb} from '../controllers/schoolDb.controller'
+import { SchoolRepository } from '../repositories/school.repository';
+import { SchoolService } from '../services/school.service';
+import { SchoolController } from '../controllers/school.controller';
+import { SchoolDbController } from '../controllers/schoolDb.controller';
+
 const router = express.Router();
 
-router.post('/register', registerSchool);
-router.post('/login', loginSchool);
-router.get('/getSchools',getAllSchools);
-router.post('/updateSchoolData',updateSchool);
-router.get('/getSchoolBySubDomain',getSchoolBySubdomain);
-router.get('/initSchoolDb', initSchoolDb);
-router.post('/create-database', createSchoolDatabase);
+// Instantiate repository → service → controller
+const schoolRepository = new SchoolRepository();
+const schoolService = new SchoolService(schoolRepository);
+const schoolController = new SchoolController(schoolService);
+const schoolDbController = new SchoolDbController();
+
+// Routes using class methods
+router.post('/register', schoolController.register);
+router.post('/login', schoolController.login);
+router.get('/getSchools', schoolController.getAll);
+router.post('/updateSchoolData', schoolController.update);
+router.get('/getSchoolBySubDomain', schoolController.getBySubDomain);
+router.post('/create-database', schoolController.createDatabase);
+
+// DB init route (separately controlled)
+router.get('/initSchoolDb', schoolDbController.initSchoolDb);
+
 export default router;
