@@ -1,5 +1,5 @@
 import { Connection } from 'mongoose';
-import { connectToSchoolDB } from '../config/connectionManager';
+import { connectToSchoolDB } from '../config/connection.manager';
 import CourseSchema from '../models/schools/school.course.model';
 
 export const getCourseModel = async (schoolName: string): Promise<any> => {

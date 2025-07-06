@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 import CourseSchema from '../models/schools/school.course.model';
 import { getCourseModel } from '../utils/getSchoolModel';
-import { CourseRequestBody } from '../types/CourseRequestBody';
+import { CourseRequestBody } from '../types/course.request.body';
 
 export class CourseRepository {
   async createCourse(schoolName: string, data: CourseRequestBody) {

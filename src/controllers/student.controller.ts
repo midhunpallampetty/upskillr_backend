@@ -1,7 +1,7 @@
 // src/controllers/student.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { StudentService } from '../services/student.service';
-import { StudentBody } from '../types/StudentBody';
+import { StudentBody } from '../types/student.body';
 
 const studentService = new StudentService();
 

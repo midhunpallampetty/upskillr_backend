@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { ISchoolMeta } from '../models/schools/schoolMeta.model';
+import { ISchoolMeta } from '../models/schools/school.meta.model';
 
 export class SchoolMetaRepository {
   private SchoolMeta: Model<ISchoolMeta>;

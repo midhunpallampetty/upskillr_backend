@@ -1,6 +1,6 @@
-import { connectToSchoolDB } from '../config/connectionManager';
-import { getSchoolMetaModel } from '../models/schools/schoolMeta.model';
-import { SchoolMetaRepository } from '../repositories/schoolMeta.repository';
+import { connectToSchoolDB } from '../config/connection.manager';
+import { getSchoolMetaModel } from '../models/schools/school.meta.model';
+import { SchoolMetaRepository } from '../repositories/schoolmeta.repository';
 
 export class SchoolDbService {
   async initializeSchoolDb(subDomain: string): Promise<string> {

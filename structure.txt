@@ -3,14 +3,14 @@
 ├── package-lock.json
 ├── src
 │   ├── apps
-│   │   ├── adminApp.ts
-│   │   ├── courseApp.ts
-│   │   ├── schoolApp.ts
-│   │   └── studentApp.ts
+│   │   ├── admin.app.ts
+│   │   ├── course.app.ts
+│   │   ├── school.app.ts
+│   │   └── student.app.ts
 │   ├── app.ts
 │   ├── chai-http.d.ts
 │   ├── config
-│   │   ├── connectionManager.ts
+│   │   ├── connection.manager.ts
 │   │   └── db.ts
 │   ├── controllers
 │   │   ├── admin.controller.ts
@@ -19,24 +19,25 @@
 │   │   ├── schoolDb.controller.ts
 │   │   └── student.controller.ts
 │   ├── middlewares
-│   │   ├── logger.js
 │   │   └── logger.ts
 │   ├── models
 │   │   ├── admin.model.ts
 │   │   ├── school.model.ts
 │   │   ├── schools
-│   │   │   ├── school.course.model.js
 │   │   │   ├── school.course.model.ts
-│   │   │   ├── schoolMeta.model.js
-│   │   │   ├── schoolMeta.model.ts
-│   │   │   ├── section.model.js
+│   │   │   ├── school.meta.model.ts
 │   │   │   ├── section.model.ts
-│   │   │   ├── video.model.js
 │   │   │   └── video.model.ts
-│   │   ├── school.SchoolSession.ts
+│   │   ├── school.session.model.ts
 │   │   ├── student.model.ts
 │   │   └── utils.ts
 │   ├── repositories
+│   │   ├── admin.repository.ts
+│   │   ├── course.repository.ts
+│   │   ├── schooldb.service.ts
+│   │   ├── schoolmeta.repository.ts
+│   │   ├── school.repository.ts
+│   │   └── student.repository.ts
 │   ├── routes
 │   │   ├── admin.routes.ts
 │   │   ├── school.course.routes.ts
@@ -44,13 +45,20 @@
 │   │   └── student.routes.ts
 │   ├── server.ts
 │   ├── services
+│   │   ├── admin.service.ts
+│   │   ├── course.service.ts
+│   │   ├── schooldb.service.ts
+│   │   ├── school.service.ts
+│   │   └── student.service.ts
 │   ├── types
+│   │   ├── auth.login.body.ts
 │   │   ├── chai-http.d.ts
-│   │   ├── LoginBody.ts
-│   │   ├── MailOptions.ts
-│   │   ├── SchoolBody.ts
-│   │   ├── StudentBody.ts
-│   │   └── updateSchoolBody.ts
+│   │   ├── course.request.body.ts
+│   │   ├── course.request.params.ts
+│   │   ├── mail.options.ts
+│   │   ├── school.body.ts
+│   │   ├── school.update.body.ts
+│   │   └── student.body.ts
 │   └── utils
 │       ├── getSchoolModel.ts
 │       ├── hash.ts
@@ -67,4 +75,4 @@
 │       └── schoolCourse.test.ts
 └── tsconfig.json
 
-15 directories, 53 files
+15 directories, 61 files

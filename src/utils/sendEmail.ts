@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { MailOptions } from '../types/MailOptions';
+import { MailOptions } from '../types/mail.options';
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587, 

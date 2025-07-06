@@ -1,8 +1,8 @@
 // controllers/course.controller.ts
 import { Request, Response } from 'express';
 import { CourseService } from '../services/course.service';
-import { CourseRequestBody } from '../types/CourseRequestBody';
-import { CourseRequestParams } from '../types/CourseRequestParams';
+import { CourseRequestBody } from '../types/course.request.body';
+import { CourseRequestParams } from '../types/course.request.params';
 
 export class CourseController {
   private courseService: CourseService;

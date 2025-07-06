@@ -1,5 +1,5 @@
 // services/course.service.ts
-import { CourseRequestBody } from '../types/CourseRequestBody';
+import { CourseRequestBody } from '../types/course.request.body';
 import { CourseRepository } from '../repositories/course.repository';
 
 export class CourseService {

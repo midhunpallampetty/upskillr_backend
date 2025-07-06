@@ -1,5 +1,5 @@
 import { School } from '../models/school.model';
-import SchoolSession from '../models/school.SchoolSession';
+import SchoolSession from '../models/school.session.model';
 import { Types } from 'mongoose';
 
 export class SchoolRepository {
