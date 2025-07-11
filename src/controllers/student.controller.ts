@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { StudentService } from '../services/student.service';
 import { StudentBody } from '../types/student.body';
-
+import { generateAccessToken,generateRefreshToken } from '../utils/jwt';
 const studentService = new StudentService();
 
 export class StudentController {
@@ -27,11 +27,25 @@ export class StudentController {
     req: Request<{}, {}, { email: string; password: string }>,
     res: Response,
     next: NextFunction
-  ):Promise<any> {
+  ): Promise<any> {
     try {
       const { email, password } = req.body;
+
+      // Validate and authenticate the student
       const student = await studentService.login(email, password);
-      return res.status(200).json({ msg: 'Student logged in', student });
+
+      // Generate JWT tokens
+      const payload = { id: student._id, email: student.email };
+      const accessToken = generateAccessToken(payload);
+      const refreshToken = generateRefreshToken(payload);
+
+      // ✅ Return tokens in the response body
+      return res.status(200).json({
+        msg: 'Student logged in',
+        student,
+        accessToken,
+        refreshToken,
+      });
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'NOT_FOUND') {

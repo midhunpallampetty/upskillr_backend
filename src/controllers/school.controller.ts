@@ -49,16 +49,32 @@ export class SchoolController {
 
   getAll = async (req: Request, res: Response) => {
     try {
-      const schools = await this.schoolService.getAll();
+      // Extract and parse query params
+      const search = (req.query.search as string) || '';
+      const sortBy = (req.query.sortBy as string) || 'createdAt';
+      const sortOrder: 'asc' | 'desc' =
+        (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 6; // 👈 Force limit to 6 items per page
+  
+      const filters = { search, sortBy, sortOrder, page, limit };
+  
+      const { schools, total, totalPages } = await this.schoolService.getAllSchools(filters);
+  
       res.status(200).json({
         msg: 'All registered schools retrieved successfully',
         count: schools.length,
+        currentPage: page,
+        totalPages,
+        total,
         schools,
       });
     } catch (error) {
+      console.error('Error in getAll:', error);
       res.status(500).json({ msg: 'Error fetching schools' });
     }
   };
+  
 
   update = async (req: Request, res: Response): Promise<any> => {
     try {

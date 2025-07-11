@@ -1,19 +1,14 @@
-// models/Course.ts
-import mongoose from 'mongoose';
+// models/schools/school.course.model.ts
+import { Schema } from 'mongoose';
+import { ICourse } from './types/ICourse';
 
-const SectionSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-});
-
-const CourseSchema = new mongoose.Schema({
+export const CourseSchema = new Schema<ICourse>({
   courseName: { type: String, required: true },
   isPreliminaryRequired: { type: Boolean, default: false },
   courseThumbnail: { type: String },
   noOfLessons: { type: Number, required: true },
   fee: { type: Number, required: true },
-  sections: [SectionSchema],
-  forum: { type: mongoose.Schema.Types.ObjectId, ref: 'Forum' },
-  school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', required: true },
+  sections: [{ type: Schema.Types.ObjectId, ref: 'Section' }],
+  forum: { type: Schema.Types.ObjectId, ref: 'Forum' },
+  school: { type: Schema.Types.ObjectId, ref: 'School', required: true },
 }, { timestamps: true });
-
-export default CourseSchema;
