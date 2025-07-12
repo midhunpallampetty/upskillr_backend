@@ -141,7 +141,7 @@ export class CourseService {
     videos: {
       videoName: string;
       url: string;
-      duration?: string;
+      description?: string;
     }[]
   ) {
     const db = mongoose.connection.useDb(schoolName);
@@ -154,7 +154,7 @@ export class CourseService {
       videos.map(video => ({
         videoName: video.videoName,
         url: video.url,
-        description: video.duration || '', // or keep it optional
+        description: video.description || '', // or keep it optional
         section: sectionId,
       }))
     );

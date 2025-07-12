@@ -105,9 +105,9 @@ export class CourseRepository {
     if (!course || !course.sections.length) return [];
   
     // Step 2: Find section documents using section IDs
-    const sections = await Section.find({ _id: { $in: course.sections } })
-      .populate('videos exam'); // optional nested population
-  
+    const sections = await Section.find({ _id: { $in: course.sections } });
+      
+console.log(sections,"sections")      
     return sections;
   }
   
