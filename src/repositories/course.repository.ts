@@ -89,7 +89,44 @@ export class CourseRepository {
       totalCount,
     };
   }
+async getCoursesBySubdomain({
+    schoolName,
+    search = '',
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    skip = 0,
+    limit = 10,
+  }: {
+    schoolName: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    skip?: number;
+    limit?: number;
+  }) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
 
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { courseName: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const sortOptions: Record<string, SortOrder> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    const courses = await Course.find(query)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit);
+    const totalCount = await Course.countDocuments(query);
+
+    return { courses, totalCount };
+  }
   async getSectionsByCourseId(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
   

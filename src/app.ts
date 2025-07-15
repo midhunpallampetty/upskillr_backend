@@ -6,13 +6,16 @@ import adminApp from './apps/admin.app';
 import schoolApp from './apps/school.app';
 import studentApp from './apps/student.app';
 import courseApp from './apps/course.app';
-
+import cors from 'cors';
 dotenv.config()
 
   
   
 const app = express();
-
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true, 
+}));
 app.use(requestLogger);
 app.use(vhost('admin.localhost', adminApp));
 app.use(vhost('school.localhost', schoolApp));

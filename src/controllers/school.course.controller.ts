@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { CourseService } from '../services/course.service';
 import { CourseRequestBody } from '../types/course.request.body';
 import { CourseRequestParams } from '../types/course.request.params';
-
+import {extractDbNameFromUrl} from '../utils/getSubdomain'
 export class CourseController {
   private courseService: CourseService;
 
@@ -107,7 +107,63 @@ console.log(videos,'hai test')
       return res.status(500).json({ message: 'Server error' });
     }
   };
-  
+
+getCoursesBySubdomain = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const {
+      schoolName, // this is actually a full URL like "http://gamersclub.localhost:5173"
+      search = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = '1',
+      limit = '10',
+    } = req.body as {
+      schoolName?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      page?: string;
+      limit?: string;
+    };
+
+    if (!schoolName) {
+      return res.status(400).json({ message: 'Missing schoolName URL in request body' });
+    }
+
+    const dbName = extractDbNameFromUrl(schoolName);
+
+    if (!dbName) {
+      return res.status(400).json({ message: 'Unable to extract DB name from provided URL' });
+    }
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+
+    const result = await this.courseService.fetchCourses({
+      schoolName: dbName,
+      search,
+      sortBy,
+      sortOrder,
+      page: pageNum,
+      limit: limitNum,
+    });
+
+    return res.status(200).json({
+      courses: result.courses,
+      pagination: {
+        total: result.totalCount,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(result.totalCount / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error in getCoursesBySubdomain:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
   getSectionsByCourseId = async (req: Request, res: Response):Promise<any> => {
     try {
       const { schoolName, courseId } = req.params;

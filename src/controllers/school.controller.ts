@@ -55,7 +55,7 @@ export class SchoolController {
       const sortOrder: 'asc' | 'desc' =
         (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
       const page = parseInt(req.query.page as string) || 1;
-      const limit = 6; // 👈 Force limit to 6 items per page
+      const limit = 20; // 👈 Force limit to 6 items per page
   
       const filters = { search, sortBy, sortOrder, page, limit };
   

@@ -135,6 +135,32 @@ export class CourseService {
       limit
     });
   }
+   async fetchCourses({
+    schoolName,
+    search = '',
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    page = 1,
+    limit = 10,
+  }: {
+    schoolName: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }) {
+    const skip = (page - 1) * limit;
+
+    return await this.courseRepository.getCoursesBySubdomain({
+      schoolName,
+      search,
+      sortBy,
+      sortOrder,
+      skip,
+      limit,
+    });
+  }
   async addVideosToSection(
     schoolName: string,
     sectionId: string,

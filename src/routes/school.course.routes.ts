@@ -9,7 +9,7 @@ router.get('/test', controller.testApi);
 router.get('/:schoolName/courses', controller.getCoursesBySchool);
 router.get('/:schoolName/courses/:courseId/sections', controller.getSectionsByCourseId);
 router.post('/:schoolName/sections/:sectionId/videos',controller.addVideosToSection);
-
+router.post('/courses', controller.getCoursesBySubdomain);
 router.get('/getvideo/:schoolName/:videoId', videoController.getVideoById);
 router.get('/getvideos/:schoolName', videoController.getVideosByIds);
 
