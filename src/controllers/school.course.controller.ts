@@ -162,6 +162,32 @@ getCoursesBySubdomain = async (req: Request, res: Response): Promise<any> => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+// controllers/course.controller.ts
+
+updateCourseData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, courseId } = req.params;
+    const updateData = req.body;
+
+    if (!schoolName || !courseId) {
+      return res.status(400).json({ message: 'Missing schoolName or courseId' });
+    }
+
+    const updatedCourse = await this.courseService.updateCourse(schoolName, courseId, updateData);
+
+    if (!updatedCourse) {
+      return res.status(404).json({ message: 'Course not found or update failed' });
+    }
+
+    return res.status(200).json({
+      message: '✅ Course updated successfully',
+      data: updatedCourse,
+    });
+  } catch (error) {
+    console.error('❌ Error updating course:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
   getSectionsByCourseId = async (req: Request, res: Response):Promise<any> => {

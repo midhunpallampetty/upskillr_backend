@@ -13,4 +13,7 @@ router.post('/courses', controller.getCoursesBySubdomain);
 router.get('/getvideo/:schoolName/:videoId', videoController.getVideoById);
 router.get('/getvideos/:schoolName', videoController.getVideosByIds);
 
+router.put('/:schoolName/course/:courseId', controller.updateCourseData);
+
 export default router;
+    

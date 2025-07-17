@@ -1,4 +1,3 @@
-// src/repositories/student.repository.ts
 import { Student } from '../models/student.model';
 
 export class StudentRepository {
@@ -8,5 +7,9 @@ export class StudentRepository {
 
   async createStudent(data: { fullName: string; email: string; password: string }) {
     return await Student.create(data);
+  }
+
+  async findAllStudents() {
+    return await Student.find().select('-password'); // Exclude passwords
   }
 }

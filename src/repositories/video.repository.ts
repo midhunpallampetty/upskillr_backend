@@ -1,4 +1,3 @@
-// repositories/video.repository.ts
 import mongoose from 'mongoose';
 import { VideoSchema } from '../models/schools/video.model';
 

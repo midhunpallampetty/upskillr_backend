@@ -194,6 +194,12 @@ export class CourseService {
   
     return videoDocs;
   }
+  // services/course.service.ts
+
+async updateCourse(schoolName: string, courseId: string, updateData: Partial<CourseRequestBody>) {
+  return await this.courseRepository.updateCourse(schoolName, courseId, updateData);
+}
+
   
   
 

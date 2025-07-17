@@ -1,4 +1,3 @@
-// src/services/student.service.ts
 import { StudentRepository } from '../repositories/student.repository';
 import { hashPassword, comparePassword } from '../utils/hash';
 
@@ -29,5 +28,8 @@ export class StudentService {
     if (!isMatch) throw new Error('INVALID_CREDENTIALS');
 
     return student;
+  }
+   async listStudents() {
+    return await this.studentRepo.findAllStudents();
   }
 }

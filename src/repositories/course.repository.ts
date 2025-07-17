@@ -12,6 +12,24 @@ export class CourseRepository {
     const Course: Model<ICourse> = await getCourseModel(schoolName);
     return Course.create(data);
   }
+  // repositories/course.repository.ts
+
+async updateCourse(
+  schoolName: string,
+  courseId: string,
+  updateData: Partial<CourseRequestBody>
+) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Course = db.model<ICourse>('Course', CourseSchema);
+
+  const updated = await Course.findByIdAndUpdate(courseId, updateData, {
+    new: true,
+    runValidators: true,
+  });
+
+  return updated;
+}
+
 
   async getCoursesBySchoolName(schoolName: string) {
     const db = mongoose.connection.useDb(schoolName);
@@ -130,7 +148,6 @@ async getCoursesBySubdomain({
   async getSectionsByCourseId(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
   
-    // Ensure these models are registered for this tenant DB
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
     const Section = db.model('Section', SectionSchema);
     const Video = db.model('Video', VideoSchema);

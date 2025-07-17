@@ -1,4 +1,3 @@
-// services/video.service.ts
 import { VideoRepository } from '../repositories/video.repository';
 
 export class VideoService {

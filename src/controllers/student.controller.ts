@@ -58,4 +58,13 @@ export class StudentController {
       return res.status(500).json({ msg: 'Login error' });
     }
   }
+
+  async listStudents(req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      const students = await studentService.listStudents();
+      return res.status(200).json({ students });
+    } catch (error) {
+      return res.status(500).json({ msg: 'Error fetching students' });
+    }
+  }
 }
