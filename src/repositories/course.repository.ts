@@ -87,7 +87,7 @@ async updateCourse(
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
 
-    const query: any = {};
+    const query: any = {isDeleted: { $ne: true }};
     if (search) {
       query.$or = [
         { courseName: { $regex: search, $options: 'i' } },
@@ -125,7 +125,7 @@ async getCoursesBySubdomain({
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
 
-    const query: any = {};
+    const query: any ={isDeleted: { $ne: true }};
     if (search) {
       query.$or = [
         { courseName: { $regex: search, $options: 'i' } },
@@ -164,6 +164,19 @@ async getCoursesBySubdomain({
 console.log(sections,"sections")      
     return sections;
   }
+  // repositories/course.repository.ts
+
+async softDeleteCourse(schoolName: string, courseId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Course = db.model<ICourse>('Course', CourseSchema);
+
+  return await Course.findByIdAndUpdate(
+    courseId,
+    { isDeleted: true },
+    { new: true }
+  );
+}
+
   
   
 }

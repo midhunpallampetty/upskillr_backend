@@ -10,4 +10,5 @@ export interface ICourse {
   sections: Types.ObjectId[]; 
   forum?: Types.ObjectId;
   school: Types.ObjectId;
+  isDeleted:boolean;
 }

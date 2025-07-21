@@ -3,7 +3,7 @@ import { hashPassword, comparePassword } from '../utils/hash';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { sendEmail } from '../utils/sendEmail';
 import { MongoClient } from 'mongodb';
-
+import crypto from 'crypto';
 const mongoURI = process.env.MONGO_URL || 'mongodb://localhost:27017';
 
 export class SchoolService {
@@ -19,12 +19,14 @@ export class SchoolService {
       email: body.email,
       password: hashedPassword,
       experience: body.experience,
-      coursesOffered: body.coursesOffered,
       isVerified: false,
       image: body.image,
       coverImage: body.coverImage,
       address: body.address,
       officialContact: body.officialContact,
+      city: body.city,
+      state: body.state,
+      country: body.country,
     });
 
     await sendEmail({
@@ -41,7 +43,39 @@ export class SchoolService {
 
     return newSchool;
   }
+  resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  const school = await this.schoolRepository.findByResetToken(token);
+  if (!school) throw new Error('Invalid or expired token');
 
+  const hashed = await hashPassword(newPassword);
+  await this.schoolRepository.resetPassword(school._id, hashed);
+};
+
+forgotPassword = async (email: string): Promise<void> => {
+  const school = await this.schoolRepository.findByEmail(email);
+  if (!school) return; // do not reveal user existence
+
+  const token = crypto.randomBytes(32).toString('hex');
+const expiry = new Date(Date.now() + 1000 * 60 * 10);
+
+  await this.schoolRepository.saveResetToken(school._id, token, expiry);
+
+  const resetLink = `http://localhost:5173/school/reset-password?token=${token}&email=${email}`;
+
+  await sendEmail({
+    to: email,
+    subject: 'Reset Your Password – Upskillr',
+    html: `
+      <h3>Hello ${school.name},</h3>
+      <p>We received a request to reset your password.</p>
+      <p><a href="${resetLink}">Click here to reset your password</a></p>
+      <p>This link will expire in 1 hour.</p>
+      <br/>
+      <p>If you didn’t request this, you can safely ignore this email.</p>
+      <p>– Team Upskillr</p>
+    `,
+  });
+};  
   async login({ email, password }: { email: string; password: string }) {
     const school = await this.schoolRepository.findByEmail(email);
     if (!school) throw new Error('School not found');
@@ -81,19 +115,21 @@ export class SchoolService {
   }) {
     return this.schoolRepository.getAllSchools(filters);
   }
-  
 
   async update(_id: string, updateFields: any) {
     const existingSchool = await this.schoolRepository.findById(_id);
     if (!existingSchool) {
       throw new Error('School not found');
     }
-  
+
+    // 👇 Remove deprecated field just in case
+    delete updateFields.coursesOffered;
+
     const updatedSchool = await this.schoolRepository.findByIdAndUpdate(_id, updateFields, { new: true });
     if (!updatedSchool) {
       throw new Error('Failed to update school');
     }
-  
+
     try {
       // 1. Verified email
       if (!existingSchool.isVerified && updateFields.isVerified === true) {
@@ -109,7 +145,7 @@ export class SchoolService {
           `,
         });
       }
-  
+
       // 2. Subdomain email
       if (!existingSchool.subDomain && updateFields.subDomain) {
         await sendEmail({
@@ -127,11 +163,9 @@ export class SchoolService {
     } catch (err) {
       console.error('Email sending failed during school update:', err);
     }
-  
+
     return updatedSchool;
   }
-  
-  
 
   async getBySubDomain(subDomain: string) {
     return await this.schoolRepository.findBySubdomain(subDomain);

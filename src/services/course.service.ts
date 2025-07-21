@@ -200,6 +200,11 @@ async updateCourse(schoolName: string, courseId: string, updateData: Partial<Cou
   return await this.courseRepository.updateCourse(schoolName, courseId, updateData);
 }
 
+async softDeleteCourse(schoolName: string, courseId: string) {
+  return await this.courseRepository.softDeleteCourse(schoolName, courseId);
+}
+
+
   
   
 

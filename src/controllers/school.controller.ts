@@ -19,6 +19,30 @@ export class SchoolController {
       res.status(400).json({ msg: error.message || 'Error registering school' });
     }
   };
+forgotPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ msg: 'Email is required' });
+
+    await this.schoolService.forgotPassword(email);
+
+    res.status(200).json({ msg: 'Reset link has been sent if the email exists' });
+  } catch (error: any) {
+    res.status(500).json({ msg: error.message || 'Something went wrong' });
+  }
+};
+resetPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ msg: 'Token and password are required' });
+
+    await this.schoolService.resetPassword(token, password);
+
+    res.status(200).json({ msg: 'Password reset successful' });
+  } catch (error: any) {
+    res.status(400).json({ msg: error.message || 'Password reset failed' });
+  }
+};
 
   login = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -33,13 +57,15 @@ export class SchoolController {
           name: school.name,
           email: school.email,
           isVerified: school.isVerified,
-          coursesOffered: school.coursesOffered,
           image: school.image,
           coverImage: school.coverImage,
           address: school.address,
           officialContact: school.officialContact,
           experience: school.experience,
           subDomain: school.subDomain,
+          city: school.city,
+          state: school.state,
+          country: school.country,
         },
       });
     } catch (error: any) {
@@ -49,18 +75,17 @@ export class SchoolController {
 
   getAll = async (req: Request, res: Response) => {
     try {
-      // Extract and parse query params
       const search = (req.query.search as string) || '';
       const sortBy = (req.query.sortBy as string) || 'createdAt';
       const sortOrder: 'asc' | 'desc' =
         (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
       const page = parseInt(req.query.page as string) || 1;
-      const limit = 20; // 👈 Force limit to 6 items per page
-  
+      const limit = 20;
+
       const filters = { search, sortBy, sortOrder, page, limit };
-  
+
       const { schools, total, totalPages } = await this.schoolService.getAllSchools(filters);
-  
+
       res.status(200).json({
         msg: 'All registered schools retrieved successfully',
         count: schools.length,
@@ -74,12 +99,14 @@ export class SchoolController {
       res.status(500).json({ msg: 'Error fetching schools' });
     }
   };
-  
 
   update = async (req: Request, res: Response): Promise<any> => {
     try {
       const { _id, ...updateFields } = req.body;
       if (!_id) return res.status(400).json({ msg: 'Valid _id is required' });
+
+      // Ensure coursesOffered is not accidentally sent
+      delete (updateFields as any).coursesOffered;
 
       const updated = await this.schoolService.update(_id, updateFields);
       if (!updated) return res.status(404).json({ msg: 'School not found' });

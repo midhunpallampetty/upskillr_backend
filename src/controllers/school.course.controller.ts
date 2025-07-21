@@ -209,7 +209,32 @@ updateCourseData = async (req: Request, res: Response): Promise<any> => {
       return res.status(500).json({ message: 'Server error' });
     }
   };
-  
+  // controllers/course.controller.ts
+
+softDeleteCourse = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, courseId } = req.params;
+
+    if (!schoolName || !courseId) {
+      return res.status(400).json({ message: 'Missing schoolName or courseId' });
+    }
+
+    const deletedCourse = await this.courseService.softDeleteCourse(schoolName, courseId);
+
+    if (!deletedCourse) {
+      return res.status(404).json({ message: 'Course not found or already deleted' });
+    }
+
+    return res.status(200).json({
+      message: '✅ Course soft-deleted successfully',
+      data: deletedCourse,
+    });
+  } catch (error) {
+    console.error('❌ Error soft-deleting course:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
   testApi = (_req: Request, res: Response) => {
     res.status(200).json({ message: '✅ Test API is working fine!' });
   };

@@ -13,6 +13,8 @@ const schoolDbController = new SchoolDbController();
 
 router.post('/register', schoolController.register);
 router.post('/login', schoolController.login);
+router.post('/forgot-password', schoolController.forgotPassword);
+router.post('/reset-password', schoolController.resetPassword);
 router.get('/getSchools', schoolController.getAll);
 router.post('/updateSchoolData', schoolController.update);
 router.get('/getSchoolBySubDomain', schoolController.getBySubDomain);

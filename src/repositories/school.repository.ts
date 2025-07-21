@@ -10,6 +10,42 @@ export class SchoolRepository {
   async findBySubdomain(subDomain: string) {
     return await School.findOne({ subDomain });
   }
+async saveResetToken(
+  schoolId: Types.ObjectId,
+  token: string,
+  expiry: Date
+) {
+  return await School.findByIdAndUpdate(schoolId, {
+    $set: {
+      resetToken: token,
+      resetTokenExpiry: expiry,
+    },
+  });
+}
+
+async findByResetToken(token: string) {
+  const now = new Date();
+  return await School.findOne({
+    resetToken: token,
+    resetTokenExpiry: { $gt: now }, // only valid tokens
+  });
+}
+
+async resetPassword(schoolId: Types.ObjectId, hashedPassword: string) {
+  return await School.findByIdAndUpdate(
+    schoolId,
+    {
+      $set: {
+        password: hashedPassword,
+      },
+      $unset: {
+        resetToken: '',
+        resetTokenExpiry: '',
+      },
+    },
+    { new: true }
+  );
+}
 
   async getAllSchools({
     search = '',
