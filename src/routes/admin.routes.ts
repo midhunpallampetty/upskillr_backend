@@ -1,8 +1,10 @@
 import express from 'express';
-import {AdminController} from '../controllers/admin.controller';
+import {container} from '../utils/container'
 
 const router = express.Router();
-const controller=new AdminController()
+
+const controller=container.adminController
+
 router.post('/register',controller.registerAdmin);
 router.post('/login', controller.loginAdmin);
 

@@ -5,6 +5,7 @@ const VideoSchema = new mongoose.Schema({
   url: { type: String, required: true },
   description: { type: String },
   section: { type: mongoose.Schema.Types.ObjectId, ref: 'Section' },
+  isDeleted:{type:Boolean,default:false}
 }, { timestamps: true });
 
 export { VideoSchema };

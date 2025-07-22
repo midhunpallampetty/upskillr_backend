@@ -1,15 +1,11 @@
-// controllers/course.controller.ts
 import { Request, Response } from 'express';
 import { CourseService } from '../services/course.service';
 import { CourseRequestBody } from '../types/course.request.body';
 import { CourseRequestParams } from '../types/course.request.params';
 import {extractDbNameFromUrl} from '../utils/getSubdomain'
 export class CourseController {
-  private courseService: CourseService;
+  constructor(private courseService: CourseService) {}
 
-  constructor() {
-    this.courseService = new CourseService();
-  }
 
   addCourseToSchoolDB = async (
     req: Request<CourseRequestParams, {}, CourseRequestBody>,
@@ -162,7 +158,6 @@ getCoursesBySubdomain = async (req: Request, res: Response): Promise<any> => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
-// controllers/course.controller.ts
 
 updateCourseData = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -188,6 +183,29 @@ updateCourseData = async (req: Request, res: Response): Promise<any> => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+softDeleteSection = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, sectionId } = req.params;
+
+    if (!schoolName || !sectionId) {
+      return res.status(400).json({ message: 'Missing schoolName or sectionId' });
+    }
+
+    const deletedSection = await this.courseService.softDeleteSection(schoolName, sectionId);
+
+    if (!deletedSection) {
+      return res.status(404).json({ message: 'Section not found or already deleted' });
+    }
+
+    return res.status(200).json({
+      message: '✅ Section soft-deleted successfully',
+      data: deletedSection,
+    });
+  } catch (error) {
+    console.error('❌ Error soft-deleting section:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
   getSectionsByCourseId = async (req: Request, res: Response):Promise<any> => {
@@ -209,7 +227,6 @@ updateCourseData = async (req: Request, res: Response): Promise<any> => {
       return res.status(500).json({ message: 'Server error' });
     }
   };
-  // controllers/course.controller.ts
 
 softDeleteCourse = async (req: Request, res: Response): Promise<any> => {
   try {

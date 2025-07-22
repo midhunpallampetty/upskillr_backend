@@ -1,13 +1,9 @@
-// src/controllers/admin.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { AdminService } from '../services/admin.service';
 
 export class AdminController {
-  private adminService: AdminService;
+  constructor(private adminService: AdminService) {}
 
-  constructor() {
-    this.adminService = new AdminService();
-  }
 
   registerAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

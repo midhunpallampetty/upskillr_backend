@@ -1,4 +1,3 @@
-// src/controllers/schoolDb.controller.ts
 import { Request, Response } from 'express';
 import { SchoolDbService } from '../services/schooldb.service';
 

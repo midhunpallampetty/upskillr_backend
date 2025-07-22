@@ -7,11 +7,9 @@ import { VideoSchema } from '../models/schools/video.model';
 import { ExamSchema } from '../models/schools/school.exam';
 
 export class CourseService {
-  private courseRepository: CourseRepository;
+constructor(private courseRepository: CourseRepository) {}
 
-  constructor() {
-    this.courseRepository = new CourseRepository();
-  }
+
 
   async addCourse(schoolName: string, courseData: CourseRequestBody) {
     const session = await mongoose.startSession();
@@ -203,9 +201,7 @@ async updateCourse(schoolName: string, courseId: string, updateData: Partial<Cou
 async softDeleteCourse(schoolName: string, courseId: string) {
   return await this.courseRepository.softDeleteCourse(schoolName, courseId);
 }
-
-
-  
-  
-
+async softDeleteSection(schoolName: string, sectionId: string) {
+  return await this.courseRepository.softDeleteSection(schoolName, sectionId);
+}
 }

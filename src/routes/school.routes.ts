@@ -1,14 +1,10 @@
 import express from 'express';
-import { SchoolRepository } from '../repositories/school.repository';
-import { SchoolService } from '../services/school.service';
-import { SchoolController } from '../controllers/school.controller';
 import { SchoolDbController } from '../controllers/schoolDb.controller';
+import {container} from '../utils/container';
 
 const router = express.Router();
 
-const schoolRepository = new SchoolRepository();
-const schoolService = new SchoolService(schoolRepository);
-const schoolController = new SchoolController(schoolService);
+const schoolController = container.schoolController;
 const schoolDbController = new SchoolDbController();
 
 router.post('/register', schoolController.register);

@@ -3,11 +3,8 @@ import { AdminRepository } from '../repositories/admin.repository';
 import { hashPassword, comparePassword } from '../utils/hash';
 
 export class AdminService {
-  private adminRepo: AdminRepository;
-
-  constructor() {
-    this.adminRepo = new AdminRepository();
-  }
+constructor(private adminRepo: AdminRepository) {}
+  
 
   async registerAdmin(email: string, password: string) {
     const existing = await this.adminRepo.findAdminByEmail(email);

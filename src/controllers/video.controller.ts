@@ -1,12 +1,11 @@
-// controllers/video.controller.ts
 import { Request, Response } from 'express';
 import { VideoService } from '../services/video.service';
 
 export class VideoController {
-  private videoService: VideoService;
+ private videoService: VideoService;
 
-  constructor() {
-    this.videoService = new VideoService();
+  constructor(videoService: VideoService) {
+    this.videoService = videoService;
   }
 
   getVideoById = async (req: Request, res: Response):Promise<any> => {
@@ -27,6 +26,24 @@ export class VideoController {
       return res.status(500).json({ message: 'Server error' });
     }
   };
+softDeleteVideo = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, videoId } = req.params;
+
+    const result = await this.videoService.softDeleteVideo(schoolName, videoId);
+    if (!result) {
+      return res.status(404).json({ message: '❌ Video not found or already deleted' });
+    }
+
+    return res.status(200).json({
+      message: '🗑️ Video soft-deleted successfully',
+      data: result,
+    });
+  } catch (error) {
+    console.error('❌ Error soft-deleting video:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
   getVideosByIds = async (req: Request, res: Response):Promise<any> => {
     try {

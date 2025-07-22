@@ -145,26 +145,27 @@ async getCoursesBySubdomain({
 
     return { courses, totalCount };
   }
-  async getSectionsByCourseId(schoolName: string, courseId: string) {
-    const db = mongoose.connection.useDb(schoolName);
-  
-    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
-    const Section = db.model('Section', SectionSchema);
-    const Video = db.model('Video', VideoSchema);
-    const Exam = db.model('Exam', ExamSchema);
-  
-    // Step 1: Get the course
-    const course = await Course.findById(courseId).select('sections');
-  
-    if (!course || !course.sections.length) return [];
-  
-    // Step 2: Find section documents using section IDs
-    const sections = await Section.find({ _id: { $in: course.sections } });
-      
-console.log(sections,"sections")      
-    return sections;
-  }
-  // repositories/course.repository.ts
+async getSectionsByCourseId(schoolName: string, courseId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+
+  const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+  const Section = db.model('Section', SectionSchema);
+  const Video = db.model('Video', VideoSchema);
+  const Exam = db.model('Exam', ExamSchema);
+
+  const course = await Course.findById(courseId).select('sections');
+
+  if (!course || !course.sections.length) return [];
+
+  const sections = await Section.find({
+    _id: { $in: course.sections },
+    isDeleted: { $ne: true } // 🔥 Exclude soft-deleted sections
+  });
+
+  console.log(sections, 'sections');
+  return sections;
+}
+
 
 async softDeleteCourse(schoolName: string, courseId: string) {
   const db = mongoose.connection.useDb(schoolName);
@@ -176,6 +177,17 @@ async softDeleteCourse(schoolName: string, courseId: string) {
     { new: true }
   );
 }
+async softDeleteSection(schoolName: string, sectionId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Section = db.model('Section', SectionSchema);
+
+  return await Section.findByIdAndUpdate(
+    sectionId,
+    { isDeleted: true },
+    { new: true }
+  );
+}
+
 
   
   
