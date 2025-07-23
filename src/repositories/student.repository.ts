@@ -8,6 +8,13 @@ export class StudentRepository {
   async createStudent(data: { fullName: string; email: string; password: string }) {
     return await Student.create(data);
   }
+async updateStudent(studentId: string, updates: Partial<{ fullName: string; image: string; password: string }>) {
+  return await Student.findByIdAndUpdate(studentId, updates, { new: true }).select('-password');
+}
+
+async findById(studentId: string) {
+  return await Student.findById(studentId);
+}
 
   async findAllStudents() {
     return await Student.find().select('-password');

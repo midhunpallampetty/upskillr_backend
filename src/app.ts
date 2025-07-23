@@ -7,11 +7,14 @@ import schoolApp from './apps/school.app';
 import studentApp from './apps/student.app';
 import courseApp from './apps/course.app';
 import cors from 'cors';
+import { errorHandler } from './middlewares/errorHandler';
 dotenv.config()
 
-  
+
   
 const app = express();
+  app.use(errorHandler);
+
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true, 

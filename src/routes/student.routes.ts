@@ -9,5 +9,5 @@ router.post('/login', controller.loginStudent);
 router.get('/students', controller.listStudents); 
 router.post('/forgot-password', controller.forgotPassword);
 router.post('/reset-password', controller.resetPassword);
-
+router.put('/students/:id', controller.updateStudentProfile);
 export default router;

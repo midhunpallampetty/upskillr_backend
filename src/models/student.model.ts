@@ -6,6 +6,7 @@ const studentSchema = new mongoose.Schema({
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   password: { type: String, required: true },
+  image:{type:String,default:null},
   isVerified: {
     type: Boolean,
     default: false,
