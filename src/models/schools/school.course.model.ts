@@ -11,4 +11,5 @@ export const CourseSchema = new Schema<ICourse>({
   sections: [{ type: Schema.Types.ObjectId, ref: 'Section' }],
   forum: { type: Schema.Types.ObjectId, ref: 'Forum' },
   school: { type: Schema.Types.ObjectId, ref: 'School', required: true },
+  description:{type:String,default:null}
 }, { timestamps: true });

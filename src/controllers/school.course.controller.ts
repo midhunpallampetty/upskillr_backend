@@ -255,4 +255,28 @@ softDeleteCourse = async (req: Request, res: Response): Promise<any> => {
   testApi = (_req: Request, res: Response) => {
     res.status(200).json({ message: '✅ Test API is working fine!' });
   };
+  getCourseById = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, courseId } = req.params;
+
+    if (!schoolName || !courseId) {
+      return res.status(400).json({ message: 'Missing schoolName or courseId' });
+    }
+
+    const course = await this.courseService.getCourseById(schoolName, courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    return res.status(200).json({
+      message: '✅ Course fetched successfully',
+      data: course,
+    });
+  } catch (error) {
+    console.error('❌ Error fetching course:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 }

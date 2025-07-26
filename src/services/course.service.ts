@@ -204,4 +204,8 @@ async softDeleteCourse(schoolName: string, courseId: string) {
 async softDeleteSection(schoolName: string, sectionId: string) {
   return await this.courseRepository.softDeleteSection(schoolName, sectionId);
 }
+async getCourseById(schoolName: string, courseId: string) {
+  return await this.courseRepository.getCourseById(schoolName, courseId);
+}
+
 }

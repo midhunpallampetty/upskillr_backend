@@ -187,6 +187,28 @@ async softDeleteSection(schoolName: string, sectionId: string) {
     { new: true }
   );
 }
+async getCourseById(schoolName: string, courseId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+
+  const course = await Course.findOne({
+    _id: courseId,
+    isDeleted: { $ne: true },
+  }).populate({
+    path: 'sections',
+    populate: [{ path: 'videos' }, { path: 'exam' }],
+  });
+
+  return course;
+}
+async findById(schoolName: string, courseId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+  return await Course.findById(courseId);
+}
+
+
+
 
 
   
