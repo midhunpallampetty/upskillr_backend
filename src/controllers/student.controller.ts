@@ -11,6 +11,7 @@ export class StudentController {
     this.forgotPassword = this.forgotPassword.bind(this);
     this.resetPassword = this.resetPassword.bind(this);
     this.updateStudentProfile = this.updateStudentProfile.bind(this);
+    this.getStudentById=this.getStudentById.bind(this);
   }
 
   async registerStudent(req: Request<{}, {}, StudentBody>, res: Response, next: NextFunction): Promise<any> {
@@ -100,7 +101,7 @@ export class StudentController {
   async updateStudentProfile(req: Request, res: Response): Promise<any> {
     const studentId = req.params.id;
     const { fullName, image, currentPassword, newPassword } = req.body;
-
+console.log(req.body,'body')
     try {
       const updatedStudent = await this.studentService.updateStudentProfile(studentId, {
         fullName,
@@ -121,4 +122,20 @@ export class StudentController {
       return res.status(error.statusCode || 400).json({ msg });
     }
   }
+  // src/controllers/student.controller.ts
+
+async getStudentById(req: Request, res: Response): Promise<any> {
+  const { id } = req.params;
+
+  try {
+    const student = await this.studentService.getStudentById(id);
+    return res.status(200).json({ student });
+  } catch (error: any) {
+    console.error('[Get Student By ID Error]', error.message);
+    return res.status(error.statusCode || 500).json({
+      msg: error.message || 'Something went wrong',
+    });
+  }
+}
+
 }

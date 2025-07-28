@@ -22,6 +22,7 @@ router.patch('/:schoolName/sections/:sectionId/soft-delete', controller.softDele
 router.patch('/:schoolName/videos/:videoId/soft-delete', videoController.softDeleteVideo);
 router.get('/:schoolName/course/:courseId', controller.getCourseById);
 router.post('/payment/checkout/:schoolName/:courseId', paymentController.createStripeCheckout);
-
-
+router.post('/payment/save', paymentController.saveStripePaymentDetails);
+router.get('/payment/session/:sessionId', paymentController.getStripeSessionDetails);
+router.get('/course/school-info/:studentId', controller.getSchoolInfoByStudentId);
 export default router;  

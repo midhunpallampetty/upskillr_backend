@@ -98,6 +98,13 @@ async updateStudentProfile(studentId: string, updates: {
 
   return await this.studentRepo.updateStudent(studentId, updateData);
 }
+// src/services/student.service.ts
+
+async getStudentById(studentId: string) {
+  const student = await this.studentRepo.findStudentById(studentId);
+  if (!student) throw new AppError('Student not found', 404);
+  return student;
+}
 
 }
 

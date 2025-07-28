@@ -279,4 +279,19 @@ softDeleteCourse = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+  getSchoolInfoByStudentId = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { studentId } = req.params;
+
+      if (!studentId) {
+        res.status(400).json({ message: 'Student ID is required' });
+        return;
+      }
+
+      const data = await this.courseService.getSchoolInfoByStudentId(studentId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
 }

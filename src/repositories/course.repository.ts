@@ -6,6 +6,9 @@ import { ICourse } from '../models/schools/types/ICourse';
 import { SectionSchema } from '../models/schools/school.sections.model';
 import { VideoSchema } from '../models/schools/video.model';
 import { ExamSchema } from '../models/schools/school.exam';
+import { School } from '../models/school.model';
+import CoursePayment from '../models/course.payment.model';
+import { extractDbNameFromUrl } from '../utils/getSubdomain';
 
 export class CourseRepository {
   async createCourse(schoolName: string, data: CourseRequestBody) {
@@ -206,11 +209,56 @@ async findById(schoolName: string, courseId: string) {
   const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
   return await Course.findById(courseId);
 }
+async getSchoolNameAndCourseIdByStudentId(studentId: string) {
+  const trimmedStudentId = studentId.trim();
+
+  const payments = await CoursePayment.find({ studentId: trimmedStudentId });
+
+  if (!payments || payments.length === 0) {
+    throw new Error('No course payments found for the given student ID');
+  }
+
+  const courseList: { schoolName: string; course: ICourse }[] = [];
+  const uniqueCourseKeys = new Set<string>();
+
+  for (const payment of payments) {
+    const { schoolId, courseId } = payment;
+
+    const key = `${schoolId}_${courseId}`;
+    if (uniqueCourseKeys.has(key)) {
+      continue; // Skip duplicate
+    }
+
+    const school = await School.findById(schoolId);
+    if (!school || !school.subDomain) {
+      console.warn(`School or subdomain not found for schoolId: ${schoolId}`);
+      continue;
+    }
+
+    const schoolName = extractDbNameFromUrl(school.subDomain);
+    if (!schoolName) {
+      console.warn(`Unable to extract school name from subdomain: ${school.subDomain}`);
+      continue;
+    }
+
+    const db = mongoose.connection.useDb(schoolName || "guest");
+
+    try {
+      const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+      const course = await Course.findById(courseId);
+      if (course) {
+        courseList.push({ schoolName, course });
+        uniqueCourseKeys.add(key); // Mark as seen
+      } else {
+        console.warn(`Course not found in ${schoolName} for courseId: ${courseId}`);
+      }
+    } catch (err) {
+      console.error(`Error fetching course from ${schoolName}:`, err.message);
+    }
+  }
+
+  return courseList;
+}
 
 
-
-
-
-  
-  
 }

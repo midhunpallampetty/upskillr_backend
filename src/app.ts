@@ -18,7 +18,7 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true, 
 }));
-app.use(requestLogger);
+// app.use(requestLogger);
 app.use(vhost('admin.localhost', adminApp));
 app.use(vhost('school.localhost', schoolApp));
 app.use(vhost('student.localhost', studentApp));

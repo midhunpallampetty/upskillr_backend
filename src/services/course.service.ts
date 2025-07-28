@@ -5,6 +5,9 @@ import { CourseSchema } from '../models/schools/school.course.model';
 import { SectionSchema } from '../models/schools/section.model';
 import { VideoSchema } from '../models/schools/video.model';
 import { ExamSchema } from '../models/schools/school.exam';
+import { School } from '../models/school.model';
+import CoursePayment from '../models/course.payment.model';
+import { extractDbNameFromUrl } from '../utils/getSubdomain';
 
 export class CourseService {
 constructor(private courseRepository: CourseRepository) {}
@@ -207,5 +210,7 @@ async softDeleteSection(schoolName: string, sectionId: string) {
 async getCourseById(schoolName: string, courseId: string) {
   return await this.courseRepository.getCourseById(schoolName, courseId);
 }
-
+  async getSchoolInfoByStudentId(studentId: string) {
+    return await this.courseRepository.getSchoolNameAndCourseIdByStudentId(studentId);
+  }
 }

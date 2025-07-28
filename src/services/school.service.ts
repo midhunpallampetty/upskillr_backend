@@ -122,7 +122,7 @@ const expiry = new Date(Date.now() + 1000 * 60 * 10);
       throw new Error('School not found');
     }
 
-    // 👇 Remove deprecated field just in case
+
     delete updateFields.coursesOffered;
 
     const updatedSchool = await this.schoolRepository.findByIdAndUpdate(_id, updateFields, { new: true });
@@ -167,7 +167,7 @@ const expiry = new Date(Date.now() + 1000 * 60 * 10);
     return updatedSchool;
   }
 
-  async getBySubDomain(subDomain: string) {
+  async getBySubDomain(subDomain: string) { 
     return await this.schoolRepository.findBySubdomain(subDomain);
   }
 

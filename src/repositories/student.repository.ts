@@ -20,6 +20,10 @@ async findById(studentId: string) {
     return await Student.find().select('-password');
   }
 
+async findStudentById(studentId: string) {
+  return await Student.findById(studentId).select('-password');
+}
+
   // 🔐 Save reset token and expiry
   async setResetToken(email: string, token: string, expires: Date) {
     return await Student.findOneAndUpdate(
