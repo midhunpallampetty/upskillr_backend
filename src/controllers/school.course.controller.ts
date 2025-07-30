@@ -294,4 +294,29 @@ softDeleteCourse = async (req: Request, res: Response): Promise<any> => {
       res.status(500).json({ success: false, message: error.message });
     }
   };
+
+
+  getCompleteCourseDetails = async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { schoolName, courseId } = req.params;
+
+      if (!schoolName || !courseId) {
+        return res.status(400).json({ message: 'Missing schoolName or courseId' });
+      }
+
+      const courseDetails = await this.courseService.getCompleteCourseDetails(schoolName, courseId);
+
+      if (!courseDetails) {
+        return res.status(404).json({ message: 'Course not found or deleted' });
+      }
+
+      return res.status(200).json({
+        message: '✅ Complete course details fetched successfully',
+        data: courseDetails,
+      });
+    } catch (error: any) {
+      console.error('❌ Error fetching complete course details:', error);
+      return res.status(500).json({ message: 'Server error' });
+    }
+  };
 }

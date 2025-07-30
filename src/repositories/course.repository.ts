@@ -17,21 +17,21 @@ export class CourseRepository {
   }
   // repositories/course.repository.ts
 
-async updateCourse(
-  schoolName: string,
-  courseId: string,
-  updateData: Partial<CourseRequestBody>
-) {
-  const db = mongoose.connection.useDb(schoolName);
-  const Course = db.model<ICourse>('Course', CourseSchema);
+  async updateCourse(
+    schoolName: string,
+    courseId: string,
+    updateData: Partial<CourseRequestBody>
+  ) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course = db.model<ICourse>('Course', CourseSchema);
 
-  const updated = await Course.findByIdAndUpdate(courseId, updateData, {
-    new: true,
-    runValidators: true,
-  });
+    const updated = await Course.findByIdAndUpdate(courseId, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
-  return updated;
-}
+    return updated;
+  }
 
 
   async getCoursesBySchoolName(schoolName: string) {
@@ -90,7 +90,7 @@ async updateCourse(
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
 
-    const query: any = {isDeleted: { $ne: true }};
+    const query: any = { isDeleted: { $ne: true } };
     if (search) {
       query.$or = [
         { courseName: { $regex: search, $options: 'i' } },
@@ -110,7 +110,7 @@ async updateCourse(
       totalCount,
     };
   }
-async getCoursesBySubdomain({
+  async getCoursesBySubdomain({
     schoolName,
     search = '',
     sortBy = 'createdAt',
@@ -128,7 +128,7 @@ async getCoursesBySubdomain({
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
 
-    const query: any ={isDeleted: { $ne: true }};
+    const query: any = { isDeleted: { $ne: true } };
     if (search) {
       query.$or = [
         { courseName: { $regex: search, $options: 'i' } },
@@ -148,116 +148,159 @@ async getCoursesBySubdomain({
 
     return { courses, totalCount };
   }
-async getSectionsByCourseId(schoolName: string, courseId: string) {
-  const db = mongoose.connection.useDb(schoolName);
+  async getSectionsByCourseId(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
 
+    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+    const Section = db.model('Section', SectionSchema);
+    const Video = db.model('Video', VideoSchema);
+    const Exam = db.model('Exam', ExamSchema);
+
+    const course = await Course.findById(courseId).select('sections');
+
+    if (!course || !course.sections.length) return [];
+
+    const sections = await Section.find({
+      _id: { $in: course.sections },
+      isDeleted: { $ne: true } // 🔥 Exclude soft-deleted sections
+    });
+
+    console.log(sections, 'sections');
+    return sections;
+  }
+
+
+  async softDeleteCourse(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course = db.model<ICourse>('Course', CourseSchema);
+
+    return await Course.findByIdAndUpdate(
+      courseId,
+      { isDeleted: true },
+      { new: true }
+    );
+  }
+  async softDeleteSection(schoolName: string, sectionId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Section = db.model('Section', SectionSchema);
+
+    return await Section.findByIdAndUpdate(
+      sectionId,
+      { isDeleted: true },
+      { new: true }
+    );
+  }
+  async getCourseById(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+
+    const course = await Course.findOne({
+      _id: courseId,
+      isDeleted: { $ne: true },
+    }).populate({
+      path: 'sections',
+      populate: [{ path: 'videos' }, { path: 'exam' }],
+    });
+
+    return course;
+  }
+  async findById(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+    return await Course.findById(courseId);
+  }
+  async getSchoolNameAndCourseIdByStudentId(studentId: string) {
+    const trimmedStudentId = studentId.trim();
+
+    const payments = await CoursePayment.find({ studentId: trimmedStudentId });
+
+    if (!payments || payments.length === 0) {
+      throw new Error('No course payments found for the given student ID');
+    }
+
+    const courseList: { schoolName: string; course: ICourse }[] = [];
+    const uniqueCourseKeys = new Set<string>();
+
+    for (const payment of payments) {
+      const { schoolId, courseId } = payment;
+
+      const key = `${schoolId}_${courseId}`;
+      if (uniqueCourseKeys.has(key)) {
+        continue; // Skip duplicate
+      }
+
+      const school = await School.findById(schoolId);
+      if (!school || !school.subDomain) {
+        console.warn(`School or subdomain not found for schoolId: ${schoolId}`);
+        continue;
+      }
+
+      const schoolName = extractDbNameFromUrl(school.subDomain);
+      if (!schoolName) {
+        console.warn(`Unable to extract school name from subdomain: ${school.subDomain}`);
+        continue;
+      }
+
+      const db = mongoose.connection.useDb(schoolName || "guest");
+
+      try {
+        const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+        const course = await Course.findById(courseId);
+        if (course) {
+          courseList.push({ schoolName, course });
+          uniqueCourseKeys.add(key); // Mark as seen
+        } else {
+          console.warn(`Course not found in ${schoolName} for courseId: ${courseId}`);
+        }
+      } catch (err) {
+        console.error(`Error fetching course from ${schoolName}:`, err.message);
+      }
+    }
+
+    return courseList;
+  }
+async getCompleteCourseDetails(schoolName: string, courseId: string) {
+  const db = mongoose.connection.useDb(schoolName);
   const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
   const Section = db.model('Section', SectionSchema);
   const Video = db.model('Video', VideoSchema);
-  const Exam = db.model('Exam', ExamSchema);
 
-  const course = await Course.findById(courseId).select('sections');
-
-  if (!course || !course.sections.length) return [];
-
-  const sections = await Section.find({
-    _id: { $in: course.sections },
-    isDeleted: { $ne: true } // 🔥 Exclude soft-deleted sections
-  });
-
-  console.log(sections, 'sections');
-  return sections;
-}
-
-
-async softDeleteCourse(schoolName: string, courseId: string) {
-  const db = mongoose.connection.useDb(schoolName);
-  const Course = db.model<ICourse>('Course', CourseSchema);
-
-  return await Course.findByIdAndUpdate(
-    courseId,
-    { isDeleted: true },
-    { new: true }
-  );
-}
-async softDeleteSection(schoolName: string, sectionId: string) {
-  const db = mongoose.connection.useDb(schoolName);
-  const Section = db.model('Section', SectionSchema);
-
-  return await Section.findByIdAndUpdate(
-    sectionId,
-    { isDeleted: true },
-    { new: true }
-  );
-}
-async getCourseById(schoolName: string, courseId: string) {
-  const db = mongoose.connection.useDb(schoolName);
-  const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
-
+  // Fetch course with populated sections and videos
   const course = await Course.findOne({
     _id: courseId,
     isDeleted: { $ne: true },
-  }).populate({
-    path: 'sections',
-    populate: [{ path: 'videos' }, { path: 'exam' }],
   });
 
-  return course;
-}
-async findById(schoolName: string, courseId: string) {
-  const db = mongoose.connection.useDb(schoolName);
-  const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
-  return await Course.findById(courseId);
-}
-async getSchoolNameAndCourseIdByStudentId(studentId: string) {
-  const trimmedStudentId = studentId.trim();
+  if (!course) throw new Error('Course not found');
 
-  const payments = await CoursePayment.find({ studentId: trimmedStudentId });
+  const populatedSections = await Promise.all(
+    course.sections.map(async (sectionId: any) => {
+      const section = await Section.findOne({ _id: sectionId, isDeleted: { $ne: true } });
 
-  if (!payments || payments.length === 0) {
-    throw new Error('No course payments found for the given student ID');
-  }
+      if (!section) return null;
 
-  const courseList: { schoolName: string; course: ICourse }[] = [];
-  const uniqueCourseKeys = new Set<string>();
+      const populatedVideos = await Promise.all(
+        section.videos.map(async (videoId: any) => {
+          const video = await Video.findOne({ _id: videoId, isDeleted: { $ne: true } });
+          return video;
+        })
+      );
 
-  for (const payment of payments) {
-    const { schoolId, courseId } = payment;
+      // Filter out nulls in case any video wasn't found
+      return {
+        ...section.toObject(),
+        videos: populatedVideos.filter(Boolean),
+      };
+    })
+  );
 
-    const key = `${schoolId}_${courseId}`;
-    if (uniqueCourseKeys.has(key)) {
-      continue; // Skip duplicate
-    }
+  // Remove any nulls in case a section wasn't found
+  const finalCourse = {
+    ...course.toObject(),
+    sections: populatedSections.filter(Boolean),
+  };
 
-    const school = await School.findById(schoolId);
-    if (!school || !school.subDomain) {
-      console.warn(`School or subdomain not found for schoolId: ${schoolId}`);
-      continue;
-    }
-
-    const schoolName = extractDbNameFromUrl(school.subDomain);
-    if (!schoolName) {
-      console.warn(`Unable to extract school name from subdomain: ${school.subDomain}`);
-      continue;
-    }
-
-    const db = mongoose.connection.useDb(schoolName || "guest");
-
-    try {
-      const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
-      const course = await Course.findById(courseId);
-      if (course) {
-        courseList.push({ schoolName, course });
-        uniqueCourseKeys.add(key); // Mark as seen
-      } else {
-        console.warn(`Course not found in ${schoolName} for courseId: ${courseId}`);
-      }
-    } catch (err) {
-      console.error(`Error fetching course from ${schoolName}:`, err.message);
-    }
-  }
-
-  return courseList;
+  return finalCourse;
 }
 
 

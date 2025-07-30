@@ -8,6 +8,9 @@ import studentApp from './apps/student.app';
 import courseApp from './apps/course.app';
 import cors from 'cors';
 import { errorHandler } from './middlewares/errorHandler';
+import commentRoutes from '../src/routes/comment.routes'
+import commentApp from './apps/comment.app';
+import examApp from './apps/exam.app';
 dotenv.config()
 
 
@@ -18,12 +21,13 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true, 
 }));
-// app.use(requestLogger);
 app.use(vhost('admin.localhost', adminApp));
 app.use(vhost('school.localhost', schoolApp));
 app.use(vhost('student.localhost', studentApp));
 app.use(vhost('course.localhost', courseApp));
-  app.use(errorHandler);
+app.use(vhost('comment.localhost', commentApp));
+app.use(vhost('exam.localhost',examApp));
+app.use(errorHandler);
 
 export default app;
 

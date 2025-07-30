@@ -25,4 +25,5 @@ router.post('/payment/checkout/:schoolName/:courseId', paymentController.createS
 router.post('/payment/save', paymentController.saveStripePaymentDetails);
 router.get('/payment/session/:sessionId', paymentController.getStripeSessionDetails);
 router.get('/course/school-info/:studentId', controller.getSchoolInfoByStudentId);
+router.get('/courses/:schoolName/:courseId/complete', controller.getCompleteCourseDetails);
 export default router;  

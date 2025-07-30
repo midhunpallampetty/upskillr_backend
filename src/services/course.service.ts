@@ -213,4 +213,20 @@ async getCourseById(schoolName: string, courseId: string) {
   async getSchoolInfoByStudentId(studentId: string) {
     return await this.courseRepository.getSchoolNameAndCourseIdByStudentId(studentId);
   }
+  async getCompleteCourseDetails(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+
+    const Course = db.model('Course', CourseSchema);
+    const Section = db.model('Section', SectionSchema);
+    const Video = db.model('Video', VideoSchema);
+
+    // Fetch course with populated sections and videos, excluding deleted records
+    const course = await this.courseRepository.getCompleteCourseDetails(schoolName, courseId);
+
+    if (!course) {
+      throw new Error('Course not found or deleted');
+    }
+
+    return course;
+  }
 }
