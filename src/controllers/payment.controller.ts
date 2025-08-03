@@ -111,5 +111,20 @@ saveStripePaymentDetails = async (req: Request, res: Response): Promise<any> => 
     res.status(500).json({ error: err.message });
   }
 };
+checkCoursePurchase = async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { courseId, studentId } = req.params;
 
+      if (!courseId || !studentId) {
+        return res.status(400).json({ error: 'Course ID and Student ID are required' });
+      }
+
+      const hasPurchased = await paymentService.checkPurchase(courseId, studentId);
+
+      res.json({ hasPurchased });
+    } catch (err: any) {
+      console.error('Check Purchase Error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  };
 }

@@ -10,6 +10,8 @@ export interface ICourse {
   sections: Types.ObjectId[]; 
   forum?: Types.ObjectId;
   school: Types.ObjectId;
+  preliminaryExam:Types.ObjectId;
+  finalExam:Types.ObjectId;
   isDeleted:boolean;
   description:string;
 }

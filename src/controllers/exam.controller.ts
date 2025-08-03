@@ -1,102 +1,143 @@
-import { Request, Response, NextFunction } from "express";
-import { ExamService } from "../services/exam.service";
+import { Request, Response } from 'express';
+import { ExamService } from '../services/exams.service';
+import { ExamRepository } from '../repositories/exams.repository';
+import { extractDbNameFromUrl } from '../utils/getSubdomain';
 
-const examService = new ExamService();
+const service = new ExamService(new ExamRepository());
 
-export class ExamController {
-  static async createExam(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
-    try {
-      const { title, totalMarks, questions, minToPass } = req.body;
-      console.log(req.body, "test");
+export class ExamQuestionController {
 
-      // Basic validation
-      if (!title || !totalMarks || !questions?.length || !minToPass) {
-        return res
-          .status(400)
-          .json({ error: "All fields are required: title, totalMarks, questions, minToPass" });
-      }
+createExam = async (req: Request, res: Response):Promise<any> => {
+  try {
+    const { schoolName, title } = req.body;
 
-      const exam = await examService.createExam({
-        title,
-        totalMarks,
-        questions,
-        minToPass,
-      });
-
-      res.status(201).json(exam);
-    } catch (err) {
-      next(err);
+    if (!schoolName || !title) {
+      return res.status(400).json({ message: 'schoolName and title are required' });
     }
+
+    const exam = await service.createExam(schoolName, title);
+    res.status(201).json({ message: '✅ Exam created', data: exam });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
+};
 
-  static async getExam(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
+
+getAllExams = async (req: Request, res: Response) => {
+  try {
+    const { schoolName } = req.query; // ✅ Received in body as per your requirement
+    const dbName = schoolName+"";
+    const exams = await service.getAllExams(dbName);
+    res.status(200).json(exams);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+  getExam = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-
-      const exam = await examService.getExam(id);
-      if (!exam) return res.status(404).json({ error: "Exam not found" });
+      const { schoolName, id } = req.params;
+      const exam = await service.getExamById(schoolName, id);
       res.json(exam);
-    } catch (err) {
-      next(err);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
-  }
+  };
 
-  static async listExams(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
+  updateExam = async (req: Request, res: Response) => {
     try {
-      const exams = await examService.listExams();
-      res.json(exams);
-    } catch (err) {
-      next(err);
+      const { schoolName, id } = req.params;
+      const updated = await service.updateExam(schoolName, id, req.body);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
-  }
+  };
 
-  static async updateExam(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
+  deleteExam = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const updates = req.body;
-
-      const updatedExam = await examService.updateExam(id, updates);
-      if (!updatedExam) {
-        return res.status(404).json({ error: "Exam not found" });
-      }
-      res.json(updatedExam);
-    } catch (err) {
-      next(err);
+      const { schoolName, examid } = req.params;
+      const deleted = await service.softDeleteExam(schoolName, examid);
+      res.json(deleted);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
-  }
+  };
 
-  static async deleteExam(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
+// controllers/exam.controller.ts
+createQuestion = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { schoolName, examId, question, options, answer } = req.body;
+console.log(req.body)
+    if (!schoolName || !examId || !question || !Array.isArray(options) || options.length === 0 || typeof answer !== 'number') {
+      return res.status(400).json({ message: 'Missing or invalid required fields (options must be a non-empty array)' });
+    }
+
+    const createdQuestion = await service.createQuestion(
+      schoolName,
+      { question, options, answer, examId }
+    );
+
+    res.status(201).json({ message: '✅ Question created', data: createdQuestion });
+  } catch (err: any) {
+    console.error(err);  // ✅ Add this for server-side logging
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+  getAllQuestions = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
 
-      const deleted = await examService.deleteExam(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Exam not found" });
-      }
-
-      res.status(204).send();
-    } catch (err) {
-      next(err);
+      const { schoolName } = req.query;
+      const dbName =schoolName+"";
+      const questions = await service.getAllQuestions(dbName);
+      res.json(questions);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
+  };
+
+  getQuestion = async (req: Request, res: Response) => {
+    try {
+      const { schoolName, id } = req.params;
+      const question = await service.getQuestionById(schoolName, id);
+      res.json(question);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+
+  updateQuestion = async (req: Request, res: Response) => {
+    try {
+      const { schoolName, id } = req.params;
+      const updated = await service.updateQuestion(schoolName, id, req.body);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+
+deleteQuestion = async (req: Request, res: Response) => {
+  try {
+    const { schoolName, id } = req.params;
+    const deleted = await service.deleteQuestion(schoolName, id);
+    res.json({ message: '✅ Question soft-deleted', data: deleted });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
   }
+};
+
+
+  addQuestionToExam = async (req: Request, res: Response) => {
+    try {
+      const { schoolName, examId, questionId } = req.body;
+      const dbName =schoolName;
+      const result = await service.addQuestionToExam(dbName, examId, questionId);
+      res.json({ message: '✅ Question added to exam', data: result });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  };
 }

@@ -94,4 +94,25 @@ studentId: new Types.ObjectId(data.studentId),
 
     return payment;
   }
+  async checkPurchase(courseId: string, studentId: string): Promise<boolean> {
+    try {
+      if (!Types.ObjectId.isValid(courseId)) {
+        throw new Error('Invalid courseId');
+      }
+
+      if (!Types.ObjectId.isValid(studentId)) {
+        throw new Error('Invalid studentId');
+      }
+
+      const payment = await CoursePayment.findOne({
+        courseId: new Types.ObjectId(courseId),
+        studentId: new Types.ObjectId(studentId),
+        paymentStatus: 'paid'
+      });
+
+      return !!payment;
+    } catch (error: any) {
+      throw new Error(`Failed to check purchase: ${error.message}`);
+    }
+  }
 }

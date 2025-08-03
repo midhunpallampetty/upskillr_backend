@@ -1,3 +1,4 @@
+// services/course.service.ts
 import mongoose from 'mongoose';
 import { CourseRequestBody } from '../types/course.request.body';
 import { CourseRepository } from '../repositories/course.repository';
@@ -10,9 +11,7 @@ import CoursePayment from '../models/course.payment.model';
 import { extractDbNameFromUrl } from '../utils/getSubdomain';
 
 export class CourseService {
-constructor(private courseRepository: CourseRepository) {}
-
-
+  constructor(private courseRepository: CourseRepository) {}
 
   async addCourse(schoolName: string, courseData: CourseRequestBody) {
     const session = await mongoose.startSession();
@@ -105,10 +104,11 @@ constructor(private courseRepository: CourseRepository) {}
       session.endSession();
     }
   }
-  
+
   async getSectionsByCourseId(schoolName: string, courseId: string) {
     return await this.courseRepository.getSectionsByCourseId(schoolName, courseId);
   }
+
   // 🔄 Updated version with filters
   async getAllCourses({
     schoolName,
@@ -136,7 +136,8 @@ constructor(private courseRepository: CourseRepository) {}
       limit
     });
   }
-   async fetchCourses({
+
+  async fetchCourses({
     schoolName,
     search = '',
     sortBy = 'createdAt',
@@ -162,6 +163,7 @@ constructor(private courseRepository: CourseRepository) {}
       limit,
     });
   }
+
   async addVideosToSection(
     schoolName: string,
     sectionId: string,
@@ -195,24 +197,29 @@ constructor(private courseRepository: CourseRepository) {}
   
     return videoDocs;
   }
+
   // services/course.service.ts
 
-async updateCourse(schoolName: string, courseId: string, updateData: Partial<CourseRequestBody>) {
-  return await this.courseRepository.updateCourse(schoolName, courseId, updateData);
-}
+  async updateCourse(schoolName: string, courseId: string, updateData: Partial<CourseRequestBody>) {
+    return await this.courseRepository.updateCourse(schoolName, courseId, updateData);
+  }
 
-async softDeleteCourse(schoolName: string, courseId: string) {
-  return await this.courseRepository.softDeleteCourse(schoolName, courseId);
-}
-async softDeleteSection(schoolName: string, sectionId: string) {
-  return await this.courseRepository.softDeleteSection(schoolName, sectionId);
-}
-async getCourseById(schoolName: string, courseId: string) {
-  return await this.courseRepository.getCourseById(schoolName, courseId);
-}
+  async softDeleteCourse(schoolName: string, courseId: string) {
+    return await this.courseRepository.softDeleteCourse(schoolName, courseId);
+  }
+
+  async softDeleteSection(schoolName: string, sectionId: string) {
+    return await this.courseRepository.softDeleteSection(schoolName, sectionId);
+  }
+
+  async getCourseById(schoolName: string, courseId: string) {
+    return await this.courseRepository.getCourseById(schoolName, courseId);
+  }
+
   async getSchoolInfoByStudentId(studentId: string) {
     return await this.courseRepository.getSchoolNameAndCourseIdByStudentId(studentId);
   }
+
   async getCompleteCourseDetails(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
 
@@ -229,4 +236,110 @@ async getCourseById(schoolName: string, courseId: string) {
 
     return course;
   }
+
+  async addOrUpdateCourseExam(
+    schoolName: string,
+    courseId: string,
+    examType: 'preliminary' | 'final',
+    examId: string
+  ) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course = db.model('Course', CourseSchema);
+    const Exam = db.model('Exam', ExamSchema);
+
+    // ✅ Check if examId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(examId)) {
+      throw new Error('Invalid exam ID');
+    }
+
+    // ✅ Check if exam exists
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      throw new Error('Exam not found');
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // ✅ Validate if preliminary is allowed
+    if (examType === 'preliminary') {
+      if (!course.isPreliminaryRequired) {
+        throw new Error('This course does not require a preliminary exam');
+      }
+      course.preliminaryExam = exam._id;
+    } else if (examType === 'final') {
+      course.finalExam = exam._id;
+    } else {
+      throw new Error('Invalid exam type');
+    }
+
+    return await course.save();
+  }
+
+// services/course.service.ts
+async getCourseQuestions(schoolName: string, courseId: string, examType: string) {
+  try {
+    // Validate inputs
+    if (!schoolName || !courseId || !examType) {
+      throw new Error('Missing required parameters: schoolName, courseId, or examType');
+    }
+
+    // Use the specified school database
+    const db = mongoose.connection.useDb(schoolName);
+    const Course = db.model('Course', CourseSchema);
+    const Exam = db.model('Exam', ExamSchema);
+
+    // Fetch the course
+    const course = await this.courseRepository.getCourseByIdForQuestions(schoolName, courseId);
+    console.log(course,'course')
+    if (!course) {
+      throw new Error('Course not found or deleted');
+    }
+
+    // Determine the exam ID based on examType
+    let examId: mongoose.Types.ObjectId | null = null;
+    if (examType.toLowerCase() === 'preliminary') {
+      if (!course.isPreliminaryRequired) {
+        throw new Error('Preliminary exam is not required for this course');
+      }
+      examId = course.preliminaryExam;
+      if (!examId) {
+        throw new Error('No preliminary exam assigned to this course');
+      }
+    } else if (examType.toLowerCase() === 'final') {
+      examId = course.finalExam;
+      if (!examId) {
+        throw new Error('No final exam assigned to this course');
+      }
+    } else {
+      throw new Error(`Invalid exam type: ${examType}. Must be 'preliminary' or 'final'`);
+    }
+
+    // Fetch the exam
+    const exam = await this.courseRepository.getExamById(schoolName, examId.toString());
+
+    if (!exam) {
+      throw new Error('Exam not found');
+    }
+
+    // Check if exam has questions
+                  const examObj=exam.toObject();
+
+    const questionIds = examObj.questions || [];
+              console.log("prelims",questionIds)
+
+    if (questionIds.length === 0) {
+      return []; // Return empty array if no questions are associated
+    }
+
+    // Fetch questions using questionIds
+    const questions = await this.courseRepository.getQuestionsByIds(schoolName, questionIds);
+    return questions;
+  } catch (error: any) {
+    console.error(`Error fetching questions for course ${courseId} in ${schoolName}:`, error);
+    throw error; // Let the controller handle the error response
+  }
+}
 }

@@ -1,3 +1,4 @@
+// repositories/course.repository.ts
 import mongoose, { Model, SortOrder } from 'mongoose';
 import { CourseSchema } from '../models/schools/school.course.model';
 import { getCourseModel } from '../utils/getSchoolModel';
@@ -8,6 +9,7 @@ import { VideoSchema } from '../models/schools/video.model';
 import { ExamSchema } from '../models/schools/school.exam';
 import { School } from '../models/school.model';
 import CoursePayment from '../models/course.payment.model';
+import { QuestionSchema } from '../models/question.model';
 import { extractDbNameFromUrl } from '../utils/getSubdomain';
 
 export class CourseRepository {
@@ -15,6 +17,7 @@ export class CourseRepository {
     const Course: Model<ICourse> = await getCourseModel(schoolName);
     return Course.create(data);
   }
+
   // repositories/course.repository.ts
 
   async updateCourse(
@@ -33,12 +36,12 @@ export class CourseRepository {
     return updated;
   }
 
-
   async getCoursesBySchoolName(schoolName: string) {
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
     return Course.find().sort({ createdAt: -1 });
   }
+
   async addVideosToSection(
     schoolName: string,
     sectionId: string,
@@ -72,6 +75,7 @@ export class CourseRepository {
 
     return await Section.findById(sectionId).populate('videos');
   }
+
   async getFilteredCourses({
     schoolName,
     search = '',
@@ -110,6 +114,7 @@ export class CourseRepository {
       totalCount,
     };
   }
+
   async getCoursesBySubdomain({
     schoolName,
     search = '',
@@ -148,6 +153,7 @@ export class CourseRepository {
 
     return { courses, totalCount };
   }
+
   async getSectionsByCourseId(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
 
@@ -169,7 +175,6 @@ export class CourseRepository {
     return sections;
   }
 
-
   async softDeleteCourse(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
     const Course = db.model<ICourse>('Course', CourseSchema);
@@ -180,6 +185,7 @@ export class CourseRepository {
       { new: true }
     );
   }
+
   async softDeleteSection(schoolName: string, sectionId: string) {
     const db = mongoose.connection.useDb(schoolName);
     const Section = db.model('Section', SectionSchema);
@@ -190,6 +196,7 @@ export class CourseRepository {
       { new: true }
     );
   }
+
   async getCourseById(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
@@ -204,11 +211,13 @@ export class CourseRepository {
 
     return course;
   }
+
   async findById(schoolName: string, courseId: string) {
     const db = mongoose.connection.useDb(schoolName);
     const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
     return await Course.findById(courseId);
   }
+
   async getSchoolNameAndCourseIdByStudentId(studentId: string) {
     const trimmedStudentId = studentId.trim();
 
@@ -241,7 +250,7 @@ export class CourseRepository {
         continue;
       }
 
-      const db = mongoose.connection.useDb(schoolName || "guest");
+      const db = mongoose.connection.useDb(schoolName || 'guest');
 
       try {
         const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
@@ -259,49 +268,100 @@ export class CourseRepository {
 
     return courseList;
   }
-async getCompleteCourseDetails(schoolName: string, courseId: string) {
+
+  async getCompleteCourseDetails(schoolName: string, courseId: string) {
+    const db = mongoose.connection.useDb(schoolName);
+    const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
+    const Section = db.model('Section', SectionSchema);
+    const Video = db.model('Video', VideoSchema);
+
+    // Fetch course with populated sections and videos
+    const course = await Course.findOne({
+      _id: courseId,
+      isDeleted: { $ne: true },
+    });
+
+    if (!course) throw new Error('Course not found');
+
+    const populatedSections = await Promise.all(
+      course.sections.map(async (sectionId: any) => {
+        const section = await Section.findOne({ _id: sectionId, isDeleted: { $ne: true } });
+
+        if (!section) return null;
+
+        const populatedVideos = await Promise.all(
+          section.videos.map(async (videoId: any) => {
+            const video = await Video.findOne({ _id: videoId, isDeleted: { $ne: true } });
+            return video;
+          })
+        );
+
+        // Filter out nulls in case any video wasn't found
+        return {
+          ...section.toObject(),
+          videos: populatedVideos.filter(Boolean),
+        };
+      })
+    );
+
+    // Remove any nulls in case a section wasn't found
+    const finalCourse = {
+      ...course.toObject(),
+      sections: populatedSections.filter(Boolean),
+    };
+
+    return finalCourse;
+  }
+
+  async addOrUpdateCourseExam(
+    schoolName: string,
+    courseId: string,
+    examType: 'preliminary' | 'final',
+    examId: string
+  ): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+// repositories/course.repository.ts
+async getCourseByIdForQuestions(schoolName: string, courseId: string) {
   const db = mongoose.connection.useDb(schoolName);
   const Course: Model<ICourse> = db.model<ICourse>('Course', CourseSchema);
-  const Section = db.model('Section', SectionSchema);
-  const Video = db.model('Video', VideoSchema);
-
-  // Fetch course with populated sections and videos
-  const course = await Course.findOne({
+  return await Course.findOne({
     _id: courseId,
     isDeleted: { $ne: true },
+  }).select('preliminaryExam finalExam isPreliminaryRequired');
+}
+
+// repositories/course.repository.ts
+async getExamById(schoolName: string, examId: string) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Exam = db.model('Exam', ExamSchema);
+  
+  const examData = await Exam.findOne({
+    _id: examId,
+    isDeleted: { $ne: true },
+  })
+  
+  console.log('Exam Data:', examData); // Debug log
+  return examData;
+}
+
+async getQuestionsByIds(schoolName: string, questionIds: string[]) {
+  const db = mongoose.connection.useDb(schoolName);
+  const Question = db.model('Question', QuestionSchema);
+  const ids = questionIds.map(id => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new Error(`Invalid question ID: ${id}`);
+    }
+    return new mongoose.Types.ObjectId(id);
   });
-
-  if (!course) throw new Error('Course not found');
-
-  const populatedSections = await Promise.all(
-    course.sections.map(async (sectionId: any) => {
-      const section = await Section.findOne({ _id: sectionId, isDeleted: { $ne: true } });
-
-      if (!section) return null;
-
-      const populatedVideos = await Promise.all(
-        section.videos.map(async (videoId: any) => {
-          const video = await Video.findOne({ _id: videoId, isDeleted: { $ne: true } });
-          return video;
-        })
-      );
-
-      // Filter out nulls in case any video wasn't found
-      return {
-        ...section.toObject(),
-        videos: populatedVideos.filter(Boolean),
-      };
-    })
-  );
-
-  // Remove any nulls in case a section wasn't found
-  const finalCourse = {
-    ...course.toObject(),
-    sections: populatedSections.filter(Boolean),
-  };
-
-  return finalCourse;
+  const questions = await Question.find({
+    _id: { $in: ids },
+    isDeleted: { $ne: true },
+  }).exec();
+  console.log('Questions Fetched:', questions); // Debug log
+  return questions;
+}
+  
 }
 
-
-}
