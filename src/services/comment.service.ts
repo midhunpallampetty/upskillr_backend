@@ -1,84 +1,70 @@
-import { CommentRepository } from '../repositories/comment.repository';
-import { Comment } from '../models/comment.model';
 import { Types } from 'mongoose';
+import { CommentRepository } from '../repositories/comment.repository';
 
-export const CommentService = {
-  addComment: async (
-    userId: string,
-    courseId: string,
-    schoolId: string,
-    content: string,
-    parentCommentId?: string
-  ) => {
+export class CommentService {
+  constructor(private commentRepository: CommentRepository) {}
+
+  async addComment(userId: string, courseId: string, schoolId: string, content: string, parentCommentId?: string) {
     const newComment = {
       user: new Types.ObjectId(userId),
       course: new Types.ObjectId(courseId),
       school: new Types.ObjectId(schoolId),
       content,
       parentComment: parentCommentId ? new Types.ObjectId(parentCommentId) : null,
-      likes: []
+      likes: [],
     };
-    console.log(newComment,'test fine');
 
-    return await CommentRepository.create(newComment);
-  },
+    return await this.commentRepository.create(newComment);
+  }
 
-getCourseCommentsWithReplies: async (courseId: string) => {
-  const comments = await CommentRepository.findByCourseId(courseId);
+  async getCourseCommentsWithReplies(courseId: string) {
+    const comments = await this.commentRepository.findByCourseId(courseId);
+    const commentMap: Record<string, any> = {};
+    const topLevel: any[] = [];
 
-  const commentMap: Record<string, any> = {};
-  const topLevel: any[] = [];
+    comments.forEach((comment: any) => {
+      comment.replies = [];
+      commentMap[comment._id.toString()] = comment;
+    });
 
-  // Convert to map with replies array
-  comments.forEach((comment: any) => {
-    comment.replies = [];
-    commentMap[comment._id.toString()] = comment;
-  });
-
-  // Link replies to their parent comments
-  comments.forEach((comment: any) => {
-    if (comment.parentComment) {
-      const parentId = comment.parentComment.toString();
-      if (commentMap[parentId]) {
-        commentMap[parentId].replies.push(comment);
+    comments.forEach((comment: any) => {
+      if (comment.parentComment) {
+        const parentId = comment.parentComment.toString();
+        if (commentMap[parentId]) {
+          commentMap[parentId].replies.push(comment);
+        }
+      } else {
+        topLevel.push(comment);
       }
-    } else {
-      topLevel.push(comment);
-    }
-  });
+    });
 
-  return topLevel;
-},
+    return topLevel;
+  }
 
-
-  deleteComment: async (commentId: string, userId: string): Promise<boolean> => {
-    const comment = await CommentRepository.findById(commentId);
+  async deleteComment(commentId: string, userId: string) {
+    const comment = await this.commentRepository.findById(commentId);
     if (!comment || comment.user.toString() !== userId) return false;
-
-    await CommentRepository.delete(commentId);
+    await this.commentRepository.delete(commentId);
     return true;
-  },
+  }
 
-  likeComment: async (commentId: string, userId: string) => {
-    const comment = await CommentRepository.findById(commentId);
+  async likeComment(commentId: string, userId: string) {
+    const comment = await this.commentRepository.findById(commentId);
     if (!comment) throw new Error('Comment not found');
 
     if (!comment.likes.map(String).includes(userId)) {
       comment.likes.push(new Types.ObjectId(userId));
-      return await CommentRepository.updateLikes(commentId, comment.likes);
+      return await this.commentRepository.updateLikes(commentId, comment.likes);
     }
 
     return comment;
-  },
+  }
 
-  unlikeComment: async (commentId: string, userId: string) => {
-    const comment = await CommentRepository.findById(commentId);
+  async unlikeComment(commentId: string, userId: string) {
+    const comment = await this.commentRepository.findById(commentId);
     if (!comment) throw new Error('Comment not found');
 
-    comment.likes = comment.likes.filter(
-      (id) => id.toString() !== userId
-    );
-
-    return await CommentRepository.updateLikes(commentId, comment.likes);
+    comment.likes = comment.likes.filter((id) => id.toString() !== userId);
+    return await this.commentRepository.updateLikes(commentId, comment.likes);
   }
-};
+}

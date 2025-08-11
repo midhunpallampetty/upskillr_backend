@@ -7,10 +7,13 @@ const studentSchema = new mongoose.Schema({
   resetPasswordExpires: { type: Date },
   password: { type: String, required: true },
   image:{type:String,default:null},
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
+  otp: String,
+otpExpires: Date,
+
+isVerified: {
+  type: Boolean,
+  default: false,
+}, 
 });
 
 export const Student = mongoose.model('Student', studentSchema);

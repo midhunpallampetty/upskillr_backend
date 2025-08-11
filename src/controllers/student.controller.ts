@@ -12,7 +12,16 @@ export class StudentController {
     this.resetPassword = this.resetPassword.bind(this);
     this.updateStudentProfile = this.updateStudentProfile.bind(this);
     this.getStudentById=this.getStudentById.bind(this);
+    this.verifyStudentOtp=this.verifyStudentOtp.bind(this);
   }
+// POST /student/verify-otp
+async verifyStudentOtp(req: Request, res: Response):Promise<any> {
+  const { email, otp } = req.body;
+
+  await this.studentService.verifyOtp(email, otp);
+
+  return res.status(200).json({ message: 'OTP verified successfully' });
+}
 
   async registerStudent(req: Request<{}, {}, StudentBody>, res: Response, next: NextFunction): Promise<any> {
     const { fullName, email, password } = req.body;

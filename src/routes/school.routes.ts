@@ -1,6 +1,7 @@
 import express from 'express';
 import { SchoolDbController } from '../controllers/schoolDb.controller';
 import {container} from '../utils/container';
+import { verifyToken } from '../middlewares/auth.middleware';
 
 const router = express.Router();
 

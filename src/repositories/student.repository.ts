@@ -5,9 +5,47 @@ export class StudentRepository {
     return await Student.findOne({ email });
   }
 
-  async createStudent(data: { fullName: string; email: string; password: string }) {
-    return await Student.create(data);
-  }
+async deleteUnverifiedExpiredStudents() {
+  const now = new Date();
+  return await Student.deleteMany({
+    isVerified: false,
+    otpExpires: { $lt: now },
+  });
+}
+
+  async createStudent(data: {
+  fullName: string;
+  email: string;
+  password: string;
+  otp?: string;
+  otpExpires?: Date;
+}) {
+  return await Student.create(data);
+}
+async verifyOtp(email: string, otp: string) {
+  const student = await Student.findOne({
+    email,
+    otp,
+    otpExpires: { $gt: new Date() },
+  });
+
+  if (!student) return null;
+
+  student.isVerified = true;
+  student.otp = undefined;
+  student.otpExpires = undefined;
+  await student.save();
+
+  return student;
+}
+async resendOtp(email: string, otp: string, otpExpires: Date) {
+  return await Student.findOneAndUpdate(
+    { email },
+    { otp, otpExpires },
+    { new: true }
+  );
+}
+
 async updateStudent(studentId: string, updates: Partial<{ fullName: string; image: string; password: string }>) {
   return await Student.findByIdAndUpdate(studentId, updates, { new: true }).select('-password');
 }

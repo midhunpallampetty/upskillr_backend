@@ -76,35 +76,37 @@ const expiry = new Date(Date.now() + 1000 * 60 * 10);
     `,
   });
 };  
-  async login({ email, password }: { email: string; password: string }) {
-    const school = await this.schoolRepository.findByEmail(email);
-    if (!school) throw new Error('School not found');
+async login({ email, password }: { email: string; password: string }) {
+  const school = await this.schoolRepository.findByEmail(email);
+  if (!school) throw new Error('School not found');
 
-    const isMatch = await comparePassword(password, school.password);
-    if (!isMatch) throw new Error('Invalid credentials');
+  const isMatch = await comparePassword(password, school.password);
+  if (!isMatch) throw new Error('Invalid credentials');
 
-    const payload = {
-      id: school._id,
-      email: school.email,
-      role: 'school',
+  const payload = {
+    id: school._id,
+    email: school.email,
+    role: 'school', // 👈 this is important for role-based logic
+    subDomain: school.subDomain,
+  };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  // Optional: log the session
+  if (school.subDomain) {
+    await this.schoolRepository.createSession({
+      schoolId: school._id,
+      schoolName: school.name,
       subDomain: school.subDomain,
-    };
-
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    if (school.subDomain) {
-      await this.schoolRepository.createSession({
-        schoolId: school._id,
-        schoolName: school.name,
-        subDomain: school.subDomain,
-        accessToken,
-        refreshToken,
-      });
-    }
-
-    return { accessToken, refreshToken, school };
+      accessToken,
+      refreshToken,
+    });
   }
+
+  return { accessToken, refreshToken, school };
+}
+
 
   async getAllSchools(filters: {
     search?: string;

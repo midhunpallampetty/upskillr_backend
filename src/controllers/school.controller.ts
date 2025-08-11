@@ -44,34 +44,41 @@ resetPassword = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-  login = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { accessToken, refreshToken, school } = await this.schoolService.login(req.body);
+login = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { accessToken, refreshToken, school } = await this.schoolService.login(req.body);
+console.log(refreshToken,"vygu")
+    // ✅ Set refresh token as HTTP-only cookie
 
-      res.status(200).json({
-        msg: 'School logged in successfully',
-        school: {
-          accessToken,
-          refreshToken,
-          id: school._id,
-          name: school.name,
-          email: school.email,
-          isVerified: school.isVerified,
-          image: school.image,
-          coverImage: school.coverImage,
-          address: school.address,
-          officialContact: school.officialContact,
-          experience: school.experience,
-          subDomain: school.subDomain,
-          city: school.city,
-          state: school.state,
-          country: school.country,
-        },
-      });
-    } catch (error: any) {
-      res.status(400).json({ msg: error.message || 'Login error' });
-    }
-  };
+
+
+    // ✅ Send accessToken + school info
+    res.status(200).json({
+      msg: 'School logged in successfully',
+      accessToken, 
+      refreshToken,
+      school: {
+        id: school._id,
+        name: school.name,
+        email: school.email,
+        isVerified: school.isVerified,
+        image: school.image,
+        coverImage: school.coverImage,
+        address: school.address,
+        officialContact: school.officialContact,
+        experience: school.experience,
+        subDomain: school.subDomain,
+        city: school.city,
+        state: school.state,
+        country: school.country,
+        role: 'school', // frontend can also use this
+      },
+    });
+  } catch (error: any) {
+    res.status(400).json({ msg: error.message || 'Login error' });
+  }
+};
+
 
   getAll = async (req: Request, res: Response) => {
     try {
@@ -119,6 +126,7 @@ resetPassword = async (req: Request, res: Response): Promise<any> => {
 
   getBySubDomain = async (req: Request, res: Response): Promise<any> => {
     try {
+      console.log (req.query,'query')
       const subDomain = req.query.subDomain as string;
       if (!subDomain) return res.status(400).json({ msg: 'subDomain is required' });
 
