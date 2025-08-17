@@ -4,6 +4,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { sendEmail } from '../utils/sendEmail';
 import { MongoClient } from 'mongodb';
 import crypto from 'crypto';
+
 const mongoURI = process.env.MONGO_URL || 'mongodb://localhost:27017';
 
 export class SchoolService {
@@ -12,6 +13,11 @@ export class SchoolService {
   async register(body: any) {
     const existing = await this.schoolRepository.findByEmail(body.email);
     if (existing) throw new Error('A school with similar name already exists.');
+
+    const existingByContact = await this.schoolRepository.findByOfficialContact(body.officialContact);
+    if (existingByContact) {
+      throw new Error('A school with this official contact number already exists.');
+    }
 
     const hashedPassword = await hashPassword(body.password);
     const newSchool = await this.schoolRepository.create({
@@ -43,70 +49,71 @@ export class SchoolService {
 
     return newSchool;
   }
+
   resetPassword = async (token: string, newPassword: string): Promise<void> => {
-  const school = await this.schoolRepository.findByResetToken(token);
-  if (!school) throw new Error('Invalid or expired token');
+    const school = await this.schoolRepository.findByResetToken(token);
+    if (!school) throw new Error('Invalid or expired token');
 
-  const hashed = await hashPassword(newPassword);
-  await this.schoolRepository.resetPassword(school._id, hashed);
-};
-
-forgotPassword = async (email: string): Promise<void> => {
-  const school = await this.schoolRepository.findByEmail(email);
-  if (!school) return; // do not reveal user existence
-
-  const token = crypto.randomBytes(32).toString('hex');
-const expiry = new Date(Date.now() + 1000 * 60 * 10);
-
-  await this.schoolRepository.saveResetToken(school._id, token, expiry);
-
-  const resetLink = `http://localhost:5173/school/reset-password?token=${token}&email=${email}`;
-
-  await sendEmail({
-    to: email,
-    subject: 'Reset Your Password – Upskillr',
-    html: `
-      <h3>Hello ${school.name},</h3>
-      <p>We received a request to reset your password.</p>
-      <p><a href="${resetLink}">Click here to reset your password</a></p>
-      <p>This link will expire in 1 hour.</p>
-      <br/>
-      <p>If you didn’t request this, you can safely ignore this email.</p>
-      <p>– Team Upskillr</p>
-    `,
-  });
-};  
-async login({ email, password }: { email: string; password: string }) {
-  const school = await this.schoolRepository.findByEmail(email);
-  if (!school) throw new Error('School not found');
-
-  const isMatch = await comparePassword(password, school.password);
-  if (!isMatch) throw new Error('Invalid credentials');
-
-  const payload = {
-    id: school._id,
-    email: school.email,
-    role: 'school', // 👈 this is important for role-based logic
-    subDomain: school.subDomain,
+    const hashed = await hashPassword(newPassword);
+    await this.schoolRepository.resetPassword(school._id, hashed);
   };
 
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+  forgotPassword = async (email: string): Promise<void> => {
+    const school = await this.schoolRepository.findByEmail(email);
+    if (!school) return; // do not reveal user existence
 
-  // Optional: log the session
-  if (school.subDomain) {
-    await this.schoolRepository.createSession({
-      schoolId: school._id,
-      schoolName: school.name,
-      subDomain: school.subDomain,
-      accessToken,
-      refreshToken,
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 1000 * 60 * 10);
+
+    await this.schoolRepository.saveResetToken(school._id, token, expiry);
+
+    const resetLink = `http://localhost:5173/school/reset-password?token=${token}&email=${email}`;
+
+    await sendEmail({
+      to: email,
+      subject: 'Reset Your Password – Upskillr',
+      html: `
+        <h3>Hello ${school.name},</h3>
+        <p>We received a request to reset your password.</p>
+        <p><a href="${resetLink}">Click here to reset your password</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <br/>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+        <p>– Team Upskillr</p>
+      `,
     });
+  };
+
+  async login({ email, password }: { email: string; password: string }) {
+    const school = await this.schoolRepository.findByEmail(email);
+    if (!school) throw new Error('School not found');
+
+    const isMatch = await comparePassword(password, school.password);
+    if (!isMatch) throw new Error('Invalid credentials');
+
+    const payload = {
+      id: school._id,
+      email: school.email,
+      role: 'school', // 👈 this is important for role-based logic
+      subDomain: school.subDomain,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // Optional: log the session
+    if (school.subDomain) {
+      await this.schoolRepository.createSession({
+        schoolId: school._id,
+        schoolName: school.name,
+        subDomain: school.subDomain,
+        accessToken,
+        refreshToken,
+      });
+    }
+
+    return { accessToken, refreshToken, school };
   }
-
-  return { accessToken, refreshToken, school };
-}
-
 
   async getAllSchools(filters: {
     search?: string;
@@ -114,7 +121,17 @@ async login({ email, password }: { email: string; password: string }) {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     limit?: number;
+    fromDate?: string; // Added for date range start (ISO format)
+    toDate?: string;   // Added for date range end (ISO format)
   }) {
+    // Optional: Add business logic or validation here, e.g., validate date formats
+    if (filters.fromDate && isNaN(Date.parse(filters.fromDate))) {
+      throw new Error('Invalid fromDate format');
+    }
+    if (filters.toDate && isNaN(Date.parse(filters.toDate))) {
+      throw new Error('Invalid toDate format');
+    }
+
     return this.schoolRepository.getAllSchools(filters);
   }
 
@@ -123,7 +140,6 @@ async login({ email, password }: { email: string; password: string }) {
     if (!existingSchool) {
       throw new Error('School not found');
     }
-
 
     delete updateFields.coursesOffered;
 
@@ -192,5 +208,9 @@ async login({ email, password }: { email: string; password: string }) {
 
     await client.close();
     return { created: true };
+  }
+
+  async checkSchoolStatusService(id: string) {
+    return await this.schoolRepository.checkVerificationAndSubdomain(id);
   }
 }

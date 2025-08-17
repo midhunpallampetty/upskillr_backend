@@ -17,5 +17,5 @@ router.post('/updateSchoolData', schoolController.update);
 router.get('/getSchoolBySubDomain', schoolController.getBySubDomain);
 router.post('/create-database', schoolController.createDatabase);
 router.get('/initSchoolDb', schoolDbController.initSchoolDb);
-
+router.get('/school/:id/check-status', schoolController.checkSchoolStatusController);
 export default router;

@@ -22,9 +22,10 @@ app.use(express.json());
     
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin:process.env.FRONTEND_URL ,
   credentials: true, 
 }));
+
 app.use(vhost('admin.localhost', adminApp));
 app.use(vhost('school.localhost', schoolApp));
 app.use(vhost('student.localhost', studentApp));

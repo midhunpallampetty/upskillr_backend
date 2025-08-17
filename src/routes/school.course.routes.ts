@@ -30,4 +30,24 @@ router.put('/:schoolName/courses/:courseId/exams', controller.addOrUpdateCourseE
 router.get('/questions', controller.getCourseQuestions);
 router.get('/checkprevious-purchase/:courseId/:studentId',paymentController.checkCoursePurchase);
 
-export default router;  
+router.post('/:schoolName/sections/:sectionId/exam',controller.addExamToSection);
+router.get('/:schoolName/courses/:courseId/progress',  controller.getStudentProgress);
+router.post('/:schoolName/courses/:courseId/videos/:videoId/progress', controller.saveStudentProgress);
+router.get('/:schoolName/courses/:courseId/certificate', controller.issueCertificate);
+router.post('/:schoolName/courses/:courseId/sections/:sectionId/progress', controller.saveSectionProgress);
+
+router.post('/:schoolName/courses/:courseId/final-exam/progress', controller.saveFinalExamProgress);
+
+// NEW: Route for checking final exam completion status
+router.get('/:schoolName/courses/:courseId/final-exam/status/:studentId', controller.checkFinalExamCompletion);
+
+// NEW: Route for checking course completion
+router.get('/:schoolName/:courseId/:studentId/:sectionId/completion', controller.checkSectionCompletion);
+
+// NEW: Route for adding a new certificate
+router.post('/:schoolName/courses/:courseId/certificates', controller.addCertificate);
+
+// NEW: Route for updating an existing certificate
+router.put('/:schoolName/courses/:courseId/certificates', controller.updateCertificate);
+
+export default router;

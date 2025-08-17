@@ -1,42 +1,42 @@
 import dotenv from 'dotenv';
 dotenv.config();
+
 import app from './app';
 import connectDB from './config/db';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { registerChatSockets } from './apps/chat.sockets';
-import forumRoutes from './routes/forum.routes'; // Import the provided routes
+import forumRoutes from './routes/forum.routes';
 
 const PORT = process.env.PORT || 5000;
 
-// Create HTTP server from Express app
+// Create HTTP server and Socket.IO instance
 const server = createServer(app);
-
-// Attach Socket.IO to it
 const io = new SocketIOServer(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
 });
 
-// Set Socket.IO instance on app for controller access
+// Attach Socket.IO to app for access in controllers
 app.set('io', io);
 
-// Register chat socket events (for connection/disconnection)
+// Register chat socket events
 registerChatSockets(io);
 
-// Use forum routes
-app.use('/api', forumRoutes); // Mount routes under /api
+// Mount forum routes
+app.use('/api', forumRoutes);
 
-// Connect DB and start server
-connectDB()
-  .then(() => {
+// Connect to DB and start server
+(async () => {
+  try {
+    await connectDB();
     server.listen(PORT, () => {
       console.log(`🚀 Server + Chat running at http://localhost:${PORT}`);
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('Failed to connect to database:', error);
     process.exit(1);
-  });
+  }
+})();

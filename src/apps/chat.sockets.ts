@@ -6,24 +6,42 @@ const forumService = new ForumService();
 export function registerChatSockets(io: Server): void {
   io.on('connection', (socket: Socket) => {
     console.log(`Chat socket connected: ${socket.id}`);
-  socket.on('typing',   payload => socket.broadcast.emit('typing', payload));
-  socket.on('stop_typing', payload => socket.broadcast.emit('stop_typing', payload));
+    
+    // Handle joining specific threads/rooms
+    socket.on('join_thread', (threadId: string) => {
+      // Leave previous rooms
+      const rooms = Array.from(socket.rooms);
+      rooms.forEach(room => {
+        if (room !== socket.id) {
+          socket.leave(room);
+        }
+      });
+      
+      // Join new thread room
+      socket.join(threadId);
+      console.log(`Socket ${socket.id} joined thread ${threadId}`);
+    });
 
+    // Updated typing events to use rooms
+    socket.on('typing', (payload: { threadId: string; userName: string }) => {
+      socket.to(payload.threadId).emit('typing', payload);
+    });
+    
+    socket.on('stop_typing', (payload: { threadId: string; userName: string }) => {
+      socket.to(payload.threadId).emit('stop_typing', payload);
+    });
 
-
-  
+    // Rest of your existing socket handlers...
     socket.on('delete_question', async (questionId: string) => {
-      if (!questionId) return; // Basic validation
+      if (!questionId) return;
       try {
-        await forumService.deleteQuestion(questionId); // Soft delete
+        await forumService.deleteQuestion(questionId);
         io.emit('question_deleted', { id: questionId });
       } catch (err) {
         console.error('Error deleting question:', err);
-        // Optionally emit an error event to the client
       }
     });
 
-    // Updated: Handle full payload and emit with questionId
     socket.on('delete_answer', async ({ answerId, questionId }: { answerId: string; questionId: string }) => {
       if (!answerId || !questionId) return;
       try {
@@ -34,7 +52,6 @@ export function registerChatSockets(io: Server): void {
       }
     });
 
-    // Updated: Handle full payload and emit with questionId and answerId
     socket.on('delete_reply', async ({ replyId, questionId, answerId }: { replyId: string; questionId: string; answerId?: string }) => {
       if (!replyId || !questionId) return;
       try {
@@ -45,12 +62,12 @@ export function registerChatSockets(io: Server): void {
       }
     });
 
-
     socket.on('disconnect', () => {
       console.log(`Chat socket disconnected: ${socket.id}`);
     });
   });
 }
+
 
 // Example HTTP endpoint integration (e.g., in your Express routes)
 export function setupForumRoutes(app: any, io: Server): void {

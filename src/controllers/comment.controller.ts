@@ -17,7 +17,7 @@ export class CommentController {
       const school = await School.findOne({ subDomain: subdomain });
       const schoolId = school?._id?.toString();
 
-      const comment = await this.commentService.addComment(userId, courseId, schoolId, text, parentId);
+      const comment = await this.commentService.addComment(userId, courseId, schoolId as string, text, parentId);
       res.status(201).json(comment);
     } catch (err) {
       console.error('Add Comment Error:', err);

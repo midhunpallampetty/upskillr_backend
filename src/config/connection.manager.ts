@@ -16,7 +16,7 @@ export const connectToSchoolDB = async (dbName: string): Promise<Connection> => 
     return connections[dbKey];
   }
 
-  const uri = `mongodb://localhost:27017/${dbKey}`; // You can make this an env variable for production
+  const uri = `${process.env.MONGO_DB_URL}/${dbKey}`; // You can make this an env variable for production
 
   try {
     const conn = await mongoose.createConnection(uri, {

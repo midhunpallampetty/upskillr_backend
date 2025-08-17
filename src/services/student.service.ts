@@ -142,7 +142,7 @@ async register(fullName: string, email: string, password: string) {
         <h3>Hello ${student.fullName},</h3>
         <p>We received a request to reset your password.</p>
         <p><a href="${resetLink}">Click here to reset your password</a></p>
-        <p>This link will expire in 15 minutes.</p>
+        <p>This link will expire in 24 Hours.</p>
         <br/>
         <p>If you didn’t request this, you can safely ignore this email.</p>
         <p>– Team Upskillr</p>
@@ -195,6 +195,8 @@ async getStudentById(studentId: string) {
   if (!student) throw new AppError('Student not found', 404);
   return student;
 }
+
+
 
 }
 

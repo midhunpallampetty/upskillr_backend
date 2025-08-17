@@ -5,8 +5,8 @@ import { MailOptions } from '../types/mail.options';
     port: 587, 
     secure: false, 
     auth: {
-      user:  "midhunps762@gmail.com",
-      pass: "ryzu bhoc sbmv unup ", 
+      user:  process.env.EMAIL_USER || "",
+      pass: process.env.EMAIL_PASSWORD || "", 
     },
     debug: true, 
     logger: true, 

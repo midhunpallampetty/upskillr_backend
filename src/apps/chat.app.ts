@@ -4,7 +4,7 @@ import forumRoutes from '../routes/forum.routes';
 
 const chatApp = express();
 chatApp.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL ,
   credentials: true,
 }));
 chatApp.use(express.json());

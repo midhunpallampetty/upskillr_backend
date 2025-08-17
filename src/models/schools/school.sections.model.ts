@@ -3,7 +3,7 @@ import { Schema } from 'mongoose';
 
 export const SectionSchema = new Schema({
   sectionName: { type: String, required: true },
-  examRequired: { type: Boolean, default: false },
+  // examRequired: { type: Boolean, default: false },
   videos: [{ type: Schema.Types.ObjectId, ref: 'Video' }],
   exam: { type: Schema.Types.ObjectId, ref: 'Exam' },
   isDeleted:{type:Boolean,default:false},

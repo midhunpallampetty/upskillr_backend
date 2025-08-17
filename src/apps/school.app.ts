@@ -6,7 +6,7 @@ const schoolApp = express();
 
 
 schoolApp.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: process.env.FRONTEND_URL, // Use the environment variable for the frontend URL
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'], 
   allowedHeaders: ['Content-Type', 'Authorization'] 
