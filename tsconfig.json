@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
-      "target": "es6",
-      "module": "commonjs",
-      "strict": true,
-      "esModuleInterop": true,
-      "moduleResolution": "node",
-      "types": ["node", "chai", "chai-http", "mocha"],
-      "baseUrl": ".",
-      "paths": {
-          "*": ["node_modules/*"]
-      }
+    "target": "es6",
+    "module": "commonjs",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "types": ["node", "chai", "chai-http", "mocha"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    },
+    "noEmitOnError": false,   // ✅ allow emitting JS even if there are type errors
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*", "test/**/*"]
 }

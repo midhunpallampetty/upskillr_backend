@@ -5,7 +5,7 @@ import CourseRoutes from '../routes/school.course.routes';
 const courseApp = express();
 
 // Middleware
-courseApp.use(cors({ origin: '*', credentials: true }));
+courseApp.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 courseApp.use(express.json());
 
 // Routes

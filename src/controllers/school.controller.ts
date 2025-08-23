@@ -78,36 +78,42 @@ export class SchoolController {
     }
   };
 
-  getAll = async (req: Request, res: Response) => {
-    try {
-      const search = (req.query.search as string) || '';
-      const sortBy = (req.query.sortBy as string) || 'createdAt';
-      const sortOrder: 'asc' | 'desc' =
-        (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = 20;
+getAll = async (req: Request, res: Response) => {
+  try {
+    const search = (req.query.search as string) || '';
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder: 'asc' | 'desc' =
+      (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 20;
 
-      // Added for date range filtering
-      const fromDate = (req.query.fromDate as string) || undefined;
-      const toDate = (req.query.toDate as string) || undefined;
+    const fromDate = (req.query.fromDate as string) || undefined;
+    const toDate = (req.query.toDate as string) || undefined;
 
-      const filters = { search, sortBy, sortOrder, page, limit, fromDate, toDate };
-
-      const { schools, total, totalPages } = await this.schoolService.getAllSchools(filters);
-
-      res.status(200).json({
-        msg: 'All registered schools retrieved successfully',
-        count: schools.length,
-        currentPage: page,
-        totalPages,
-        total,
-        schools,
-      });
-    } catch (error) {
-      console.error('Error in getAll:', error);
-      res.status(500).json({ msg: 'Error fetching schools' });
+    let isVerified: boolean | undefined = undefined;
+    if (typeof req.query.isVerified === 'string') {
+      if (req.query.isVerified.toLowerCase() === 'true') isVerified = true;
+      else if (req.query.isVerified.toLowerCase() === 'false') isVerified = false;
     }
-  };
+
+    const filters = { search, sortBy, sortOrder, page, limit, fromDate, toDate, isVerified };
+
+    const { schools, total, totalPages } = await this.schoolService.getAllSchools(filters);
+console.log(schools, 'Schools retrieved successfully'); // Debug: Log retrieved schools
+    res.status(200).json({
+      msg: 'Schools retrieved successfully',
+      count: schools.length,
+      currentPage: page,
+      totalPages,
+      total,
+      schools,
+    });
+  } catch (error) {
+    console.error('Error in getAll:', error);
+    res.status(500).json({ msg: 'Error fetching schools' });
+  }
+};
+
 
   update = async (req: Request, res: Response): Promise<any> => {
     try {

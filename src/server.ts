@@ -14,10 +14,10 @@ const PORT = process.env.PORT || 5000;
 const server = createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: ["http://localhost:5173", "https://upskillr.online"],
     credentials: true,
   },
-});
+}); 
 
 // Attach Socket.IO to app for access in controllers
 app.set('io', io);

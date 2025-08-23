@@ -67,7 +67,7 @@ export class SchoolService {
 
     await this.schoolRepository.saveResetToken(school._id, token, expiry);
 
-    const resetLink = `http://localhost:5173/school/reset-password?token=${token}&email=${email}`;
+    const resetLink = `http:eduvia.space/school/reset-password?token=${token}&email=${email}`;
 
     await sendEmail({
       to: email,
@@ -115,25 +115,26 @@ export class SchoolService {
     return { accessToken, refreshToken, school };
   }
 
-  async getAllSchools(filters: {
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-    fromDate?: string; // Added for date range start (ISO format)
-    toDate?: string;   // Added for date range end (ISO format)
-  }) {
-    // Optional: Add business logic or validation here, e.g., validate date formats
-    if (filters.fromDate && isNaN(Date.parse(filters.fromDate))) {
-      throw new Error('Invalid fromDate format');
-    }
-    if (filters.toDate && isNaN(Date.parse(filters.toDate))) {
-      throw new Error('Invalid toDate format');
-    }
-
-    return this.schoolRepository.getAllSchools(filters);
+async getAllSchools(filters: {
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  isVerified?: boolean | undefined;
+}) {
+  if (filters.fromDate && isNaN(Date.parse(filters.fromDate))) {
+    throw new Error('Invalid fromDate format');
   }
+  if (filters.toDate && isNaN(Date.parse(filters.toDate))) {
+    throw new Error('Invalid toDate format');
+  }
+
+  return this.schoolRepository.getAllSchools(filters);
+}
+
 
   async update(_id: string, updateFields: any) {
     const existingSchool = await this.schoolRepository.findById(_id);

@@ -561,7 +561,7 @@ export class CourseController {
     try {
       const { schoolName, courseId } = req.params;
       const { studentId } = req.body; // Assuming studentId in body; adjust if needed
-
+console.log('Controller: addCertificate called with:', { schoolName, courseId, studentId }); // Debug: Confirm params
       if (!schoolName || !courseId || !studentId) {
         return res.status(400).json({ message: 'Missing schoolName, courseId, or studentId' });
       }

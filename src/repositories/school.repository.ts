@@ -48,114 +48,144 @@ export class SchoolRepository {
     );
   }
 
-  async getAllSchools({
-    search = '',
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
-    page = 1,
-    limit = 10,
-    fromDate, // Optional ISO date string, e.g., '2023-01-01'
-    toDate,   // Optional ISO date string, e.g., '2023-12-31'
-  }: {
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-    fromDate?: string;
-    toDate?: string;
-  }) {
-    let query: any = { isVerified: true }; // Always filter to only verified schools
+async getAllSchools({
+  search = '',
+  sortBy = 'createdAt',
+  sortOrder = 'desc',
+  page = 1,
+  limit = 20,
+  fromDate, // Optional ISO date string, e.g., '2023-01-01'
+  toDate,   // Optional ISO date string, e.g., '2023-12-31'
+  isVerified, // Optional boolean or undefined
+}: {
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  isVerified?: boolean | undefined;
+}) {
+  let baseQuery: any = {};
 
-    // Expanded search logic for additional fields
-    if (search) {
-      const regexSearch = { $regex: search, $options: 'i' };
 
-      const searchQuery = {
-        $or: [
-          { name: regexSearch },
-          { email: regexSearch },
-          { address: regexSearch },
-          { subDomain: regexSearch },
-          { experience: regexSearch },      // Assuming string in schema
-          { officialContact: regexSearch },
-          { city: regexSearch },
-          { state: regexSearch },
-          { country: regexSearch },
-          { image: regexSearch },
-          { coverImage: regexSearch },
-        ],
-      };
-
-      // Optional handling for isVerified (boolean search) - but since we're always filtering to true, this may be redundant
-      // You can remove if not needed, as isVerified is already forced to true
-      const lowerSearch = search.toLowerCase();
-      if (lowerSearch === 'true' || lowerSearch === 'false') {
-        searchQuery.$or.push({ isVerified: lowerSearch === 'true' });
-      }
-
-      // Combine with base query
-      query = { $and: [query, searchQuery] };
+  // Build baseQuery depending on isVerified presence
+  if (typeof isVerified === 'boolean') {
+    if (isVerified) {
+      baseQuery.isVerified = true; // only verified
+    } else {
+      // match both explicitly false and missing field
+      baseQuery.$or = [{ isVerified: false }, { isVerified: { $exists: false } }];
     }
-
-    // Added date range filtering on createdAt (adjust to updatedAt if preferred)
-    const dateQuery: any = {};
-    if (fromDate) {
-      try {
-        dateQuery.$gte = new Date(fromDate);
-      } catch (e) {
-        throw new Error('Invalid fromDate format');
-      }
-    }
-    if (toDate) {
-      try {
-        dateQuery.$lte = new Date(toDate);
-      } catch (e) {
-        throw new Error('Invalid toDate format');
-      }
-    }
-    if (Object.keys(dateQuery).length > 0) {
-      const dateFilter = { createdAt: dateQuery };
-      if (Object.keys(query).length === 1 && query.isVerified) { // Only base filter
-        query = { ...query, ...dateFilter };
-      } else {
-        query = { $and: [query, dateFilter] }; // Combine with existing query
-      }
-    }
-
-    const skip = (page - 1) * limit;
-    const sortOptions: Record<string, SortOrder> = {
-      [sortBy]: sortOrder === 'asc' ? 1 : -1,
-    };
-
-    // Use aggregation for reliable sorting with collation
-    const aggregation = [
-      { $match: query },
-      { $sort: sortOptions },
-      { $skip: skip },
-      { $limit: limit },
-      { $project: { password: 0 } }, // Equivalent to .select('-password')
-    ];
-
-    // Apply collation as an option to aggregate only for name sorting (case-insensitive)
-    let aggregateOptions = {};
-    if (sortBy === 'name') {
-      aggregateOptions = { collation: { locale: 'en', strength: 2 } };
-    }
-
-    const schools = await School.aggregate(aggregation, aggregateOptions);
-
-    const total = await School.countDocuments(query);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      schools,
-      total,
-      totalPages,
-      currentPage: page,
-    };
+  } else {
+    // no filter → include all
+    baseQuery = {};
   }
+
+
+  // Expanded search logic for additional fields
+  if (search) {
+    const regexSearch = { $regex: search, $options: 'i' };
+
+
+    const searchQuery = {
+      $or: [
+        { name: regexSearch },
+        { email: regexSearch },
+        { address: regexSearch },
+        { subDomain: regexSearch },
+        { experience: regexSearch },      // Assuming string in schema
+        { officialContact: regexSearch },
+        { city: regexSearch },
+        { state: regexSearch },
+        { country: regexSearch },
+        { image: regexSearch },
+        { coverImage: regexSearch },
+      ],
+    };
+
+
+    const lowerSearch = search.toLowerCase();
+    if (lowerSearch === 'true' || lowerSearch === 'false') {
+      searchQuery.$or.push({ isVerified: lowerSearch === 'true' });
+    }
+
+
+    // Combine with base query
+    if (Object.keys(baseQuery).length === 0) {
+      baseQuery = searchQuery;
+    } else {
+      baseQuery = { $and: [baseQuery, searchQuery] };
+    }
+  }
+
+
+  // Date range filter on createdAt
+  const dateQuery: any = {};
+  if (fromDate) {
+    try {
+      dateQuery.$gte = new Date(fromDate);
+    } catch (e) {
+      throw new Error('Invalid fromDate format');
+    }
+  }
+  if (toDate) {
+    try {
+      dateQuery.$lte = new Date(toDate);
+    } catch (e) {
+      throw new Error('Invalid toDate format');
+    }
+  }
+  if (Object.keys(dateQuery).length > 0) {
+    const dateFilter = { createdAt: dateQuery };
+    if (Object.keys(baseQuery).length === 0) {
+      baseQuery = dateFilter;
+    } else {
+      baseQuery = { $and: [baseQuery, dateFilter] };
+    }
+  }
+
+
+  const skip = (page - 1) * limit;
+  const sortOptions: Record<string, SortOrder> = {
+    [sortBy]: sortOrder === 'asc' ? 1 : -1,
+  };
+
+
+  // Use find() instead of aggregate
+  let query = School.find(baseQuery)
+    .select('-password')
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limit);
+
+
+  // Apply collation for name sorting (case-insensitive)
+  if (sortBy === 'name') {
+    query = query.collation({ locale: 'en', strength: 2 });
+  }
+
+
+  const schools = await query.exec();
+
+
+  const total = await School.countDocuments(baseQuery);
+
+
+  const totalPages = Math.ceil(total / limit);
+
+
+  return {
+    schools,
+    total,
+    totalPages,
+    currentPage: page,
+  };
+}
+
+
+
 
   async findById(_id: string) {
     return await School.findById(_id);

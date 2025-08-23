@@ -877,7 +877,7 @@ async issueCertificate(schoolName: string, studentId: string, courseId: string):
           <div class="certificate">
             <h1>Certificate of Completion</h1>
             <p>This certifies that</p>
-            <h2>${student.name}</h2>
+            <h2>${student.fullName}vfdvdf</h2>
             <p>has successfully completed the course</p>
             <h2>${course.courseName}</h2>
             <p class="date">Issued on ${dateIssued}</p>
