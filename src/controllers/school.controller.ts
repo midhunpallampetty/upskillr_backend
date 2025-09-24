@@ -18,6 +18,36 @@ export class SchoolController {
       res.status(400).json({ msg: error.message || 'Error registering school' });
     }
   };
+ setBlockStatus = async (req: Request, res: Response, next: NextFunction):Promise<any>=> {
+  console.log('Received request:', req.params, req.body); // Log ID and body
+  try {
+    const { id } = req.params;
+    const { isBlocked } = req.body;
+
+    if (!id) {
+      console.error('Missing ID');
+      return res.status(400).json({ msg: 'School ID is required' });
+    }
+    if (typeof isBlocked === 'undefined') {
+      console.error('Missing isBlocked');
+      return res.status(400).json({ msg: 'isBlocked is required' });
+    }
+    const blockedStatus = typeof isBlocked === 'string' ? isBlocked.toLowerCase() === 'true' : !!isBlocked; // Handle string/boolean
+    console.log('Parsed blockedStatus:', blockedStatus);
+
+    const updatedSchool = await this.schoolService.setBlockStatus(id, blockedStatus);
+    const action = blockedStatus ? 'blocked' : 'unblocked';
+
+    res.status(200).json({
+      msg: `School successfully ${action}`,
+      school: updatedSchool,
+    });
+  } catch (error: any) {
+    console.error('Error in setBlockStatus:', error); // Log full error
+    res.status(400).json({ msg: error.message || 'Error updating block status' });
+  }
+};
+
 
   forgotPassword = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -85,7 +115,7 @@ getAll = async (req: Request, res: Response) => {
     const sortOrder: 'asc' | 'desc' =
       (req.query.sortOrder as string)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 20;
+    const limit = parseInt(req.query.limit as string) || 20; // Updated: Respect query param for limit
 
     const fromDate = (req.query.fromDate as string) || undefined;
     const toDate = (req.query.toDate as string) || undefined;
@@ -99,7 +129,7 @@ getAll = async (req: Request, res: Response) => {
     const filters = { search, sortBy, sortOrder, page, limit, fromDate, toDate, isVerified };
 
     const { schools, total, totalPages } = await this.schoolService.getAllSchools(filters);
-console.log(schools, 'Schools retrieved successfully'); // Debug: Log retrieved schools
+    console.log(schools, 'Schools retrieved successfully'); // Debug: Log retrieved schools
     res.status(200).json({
       msg: 'Schools retrieved successfully',
       count: schools.length,
@@ -113,6 +143,8 @@ console.log(schools, 'Schools retrieved successfully'); // Debug: Log retrieved 
     res.status(500).json({ msg: 'Error fetching schools' });
   }
 };
+
+
 
 
   update = async (req: Request, res: Response): Promise<any> => {

@@ -2,11 +2,15 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '../utils/jwt';
-import {Admin} from '../models/admin.model';
-import {School} from '../models/school.model';
-import {Student} from '../models/student.model';
+import { Admin } from '../models/admin.model';
+import { School } from '../models/school.model';
+import studentSchema from '../models/studentschema.model'; // Import the student schema (adjust path if needed)
+import { models, model } from 'mongoose';
 
-export const refreshTokenController = async (req: Request, res: Response):Promise<any> => {
+// Get or create the Student model safely to avoid overwrite errors
+const Student = models.Student || model('Student', studentSchema);
+
+export const refreshTokenController = async (req: Request, res: Response): Promise<any> => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
@@ -40,12 +44,12 @@ export const refreshTokenController = async (req: Request, res: Response):Promis
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     });
-} catch (err: any) {
-  console.error('🔴 Refresh Token Error:', err);
-  return res.status(500).json({ message: 'Something went wrong', error: err.message || err });
-}
-
+  } catch (err: any) {
+    console.error('🔴 Refresh Token Error:', err);
+    return res.status(500).json({ message: 'Something went wrong', error: err.message || err });
+  }
 };
- export const testApi = async (_req: Request, res: Response) => {
-    res.status(200).json({ message: '✅ Test API is working fine!' });
-  };
+
+export const testApi = async (_req: Request, res: Response) => {
+  res.status(200).json({ message: '✅ Test API is working fine!' });
+};

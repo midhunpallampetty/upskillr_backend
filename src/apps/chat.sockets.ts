@@ -72,26 +72,31 @@ export function registerChatSockets(io: Server): void {
 // Example HTTP endpoint integration (e.g., in your Express routes)
 export function setupForumRoutes(app: any, io: Server): void {
   // POST QUESTION
-  app.post('/api/forum/questions', async (req: any, res: any) => {
-    try {
-      const { question, author, category, authorType, imageUrls = [] } = req.body;
-      if (!question || !author || !authorType || !category) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-      const qDoc = await forumService.createQuestion({
-        question,
-        category,
-        author,
-        authorType,
-        imageUrls,
-      });
-      io.emit('new_question', qDoc); // Emit to all clients
-      res.status(201).json(qDoc);
-    } catch (error) {
-      console.error('Error creating question:', error);
-      res.status(500).json({ error: 'Internal server error' });
+app.post('/api/forum/questions', async (req: any, res: any) => {
+  try {
+    const { question, author, category, authorType, imageUrls = [] } = req.body;
+    if (!question || !author || !authorType || !category) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-  });
+    const qDoc = await forumService.createQuestion({
+      question,
+      category,
+      author,
+      authorType,
+      imageUrls,
+    });
+
+    // Fetch the full document after creation to ensure images/assets are processed
+    const fullQDoc = await forumService.getQuestionById(qDoc._id); // Implement this method if it doesn't exist
+
+    io.emit('new_question', fullQDoc); // Emit the complete document
+    res.status(201).json(fullQDoc);
+  } catch (error) {
+    console.error('Error creating question:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
   // POST ANSWER
   app.post('/api/forum/answers', async (req: any, res: any) => {

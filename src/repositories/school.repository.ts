@@ -1,21 +1,31 @@
-import { School } from '../models/school.model';
-import SchoolSession from '../models/school.session.model';
-import { Types, SortOrder } from 'mongoose';
+import { Types, SortOrder, Connection } from 'mongoose';
 
 export class SchoolRepository {
-  async findByEmail(email: string) {
+  // Models should be defined on the tenant DB instance
+  private getSchoolModel(db: Connection) {
+    return db.model('School');
+  }
+  private getSchoolSessionModel(db: Connection) {
+    return db.model('SchoolSession');
+  }
+
+  async findByEmail(db: Connection, email: string) {
+    const School = this.getSchoolModel(db);
     return await School.findOne({ email });
   }
 
-  async findBySubdomain(subDomain: string) {
+  async findBySubdomain(db: Connection, subDomain: string) {
+    const School = this.getSchoolModel(db);
     return await School.findOne({ subDomain });
   }
 
   async saveResetToken(
+    db: Connection,
     schoolId: Types.ObjectId,
     token: string,
     expiry: Date
   ) {
+    const School = this.getSchoolModel(db);
     return await School.findByIdAndUpdate(schoolId, {
       $set: {
         resetToken: token,
@@ -24,197 +34,150 @@ export class SchoolRepository {
     });
   }
 
-  async findByResetToken(token: string) {
+  async findByResetToken(db: Connection, token: string) {
+    const School = this.getSchoolModel(db);
     const now = new Date();
     return await School.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: now }, // only valid tokens
+      resetTokenExpiry: { $gt: now },
     });
   }
 
-  async resetPassword(schoolId: Types.ObjectId, hashedPassword: string) {
+  async resetPassword(db: Connection, schoolId: Types.ObjectId, hashedPassword: string) {
+    const School = this.getSchoolModel(db);
     return await School.findByIdAndUpdate(
       schoolId,
       {
-        $set: {
-          password: hashedPassword,
-        },
-        $unset: {
-          resetToken: '',
-          resetTokenExpiry: '',
-        },
+        $set: { password: hashedPassword },
+        $unset: { resetToken: '', resetTokenExpiry: '' },
       },
       { new: true }
     );
   }
 
-async getAllSchools({
-  search = '',
-  sortBy = 'createdAt',
-  sortOrder = 'desc',
-  page = 1,
-  limit = 20,
-  fromDate, // Optional ISO date string, e.g., '2023-01-01'
-  toDate,   // Optional ISO date string, e.g., '2023-12-31'
-  isVerified, // Optional boolean or undefined
-}: {
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-  fromDate?: string;
-  toDate?: string;
-  isVerified?: boolean | undefined;
-}) {
-  let baseQuery: any = {};
+  async getAllSchools(db: Connection, {
+    search = '',
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    page = 1,
+    limit = 20,
+    fromDate,
+    toDate,
+    isVerified,
+  }: {
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+    fromDate?: string;
+    toDate?: string;
+    isVerified?: boolean | undefined;
+  }) {
+    const School = this.getSchoolModel(db);
 
+    const query: any = {};
 
-  // Build baseQuery depending on isVerified presence
-  if (typeof isVerified === 'boolean') {
-    if (isVerified) {
-      baseQuery.isVerified = true; // only verified
-    } else {
-      // match both explicitly false and missing field
-      baseQuery.$or = [{ isVerified: false }, { isVerified: { $exists: false } }];
+    if (typeof isVerified === 'boolean') {
+      query.isVerified = isVerified;
     }
-  } else {
-    // no filter → include all
-    baseQuery = {};
-  }
 
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) query.createdAt.$lte = new Date(toDate);
+    }
 
-  // Expanded search logic for additional fields
-  if (search) {
-    const regexSearch = { $regex: search, $options: 'i' };
-
-
-    const searchQuery = {
-      $or: [
+    if (search) {
+      const regexSearch = { $regex: search, $options: 'i' };
+      const searchConditions = [
         { name: regexSearch },
         { email: regexSearch },
         { address: regexSearch },
         { subDomain: regexSearch },
-        { experience: regexSearch },      // Assuming string in schema
+        { experience: regexSearch },
         { officialContact: regexSearch },
         { city: regexSearch },
         { state: regexSearch },
         { country: regexSearch },
         { image: regexSearch },
         { coverImage: regexSearch },
-      ],
+      ];
+      const lowerSearch = search.toLowerCase();
+      if (lowerSearch === 'true' || lowerSearch === 'false') {
+        searchConditions.push({ isVerified: lowerSearch === 'true' });
+      }
+      query.$and = query.$and || [];
+      query.$and.push({ $or: searchConditions });
+    }
+
+    const skip = (page - 1) * limit;
+    const sortOptions: Record<string, SortOrder> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
     };
 
+    let findQuery = School.find(query)
+      .select('-password')
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit);
 
-    const lowerSearch = search.toLowerCase();
-    if (lowerSearch === 'true' || lowerSearch === 'false') {
-      searchQuery.$or.push({ isVerified: lowerSearch === 'true' });
+    if (sortBy === 'name') {
+      findQuery = findQuery.collation({ locale: 'en', strength: 2 });
     }
 
+    const schools = await findQuery.exec();
+    const total = await School.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
 
-    // Combine with base query
-    if (Object.keys(baseQuery).length === 0) {
-      baseQuery = searchQuery;
-    } else {
-      baseQuery = { $and: [baseQuery, searchQuery] };
-    }
+    return {
+      schools,
+      total,
+      totalPages,
+      currentPage: page,
+    };
   }
 
-
-  // Date range filter on createdAt
-  const dateQuery: any = {};
-  if (fromDate) {
-    try {
-      dateQuery.$gte = new Date(fromDate);
-    } catch (e) {
-      throw new Error('Invalid fromDate format');
-    }
-  }
-  if (toDate) {
-    try {
-      dateQuery.$lte = new Date(toDate);
-    } catch (e) {
-      throw new Error('Invalid toDate format');
-    }
-  }
-  if (Object.keys(dateQuery).length > 0) {
-    const dateFilter = { createdAt: dateQuery };
-    if (Object.keys(baseQuery).length === 0) {
-      baseQuery = dateFilter;
-    } else {
-      baseQuery = { $and: [baseQuery, dateFilter] };
-    }
-  }
-
-
-  const skip = (page - 1) * limit;
-  const sortOptions: Record<string, SortOrder> = {
-    [sortBy]: sortOrder === 'asc' ? 1 : -1,
-  };
-
-
-  // Use find() instead of aggregate
-  let query = School.find(baseQuery)
-    .select('-password')
-    .sort(sortOptions)
-    .skip(skip)
-    .limit(limit);
-
-
-  // Apply collation for name sorting (case-insensitive)
-  if (sortBy === 'name') {
-    query = query.collation({ locale: 'en', strength: 2 });
-  }
-
-
-  const schools = await query.exec();
-
-
-  const total = await School.countDocuments(baseQuery);
-
-
-  const totalPages = Math.ceil(total / limit);
-
-
-  return {
-    schools,
-    total,
-    totalPages,
-    currentPage: page,
-  };
-}
-
-
-
-
-  async findById(_id: string) {
+  async findById(db: Connection, _id: string) {
+    const School = this.getSchoolModel(db);
     return await School.findById(_id);
   }
 
-  async findByOfficialContact(contact: string) {
+  async findByOfficialContact(db: Connection, contact: string) {
+    const School = this.getSchoolModel(db);
     return await School.findOne({ officialContact: contact });
   }
 
-  async findByIdAndUpdate(_id: string, updateFields: any, options = { new: true }) {
+  async findByIdAndUpdate(db: Connection, _id: string, updateFields: any, options = { new: true }) {
+    const School = this.getSchoolModel(db);
     return await School.findByIdAndUpdate(_id, { $set: updateFields }, options);
   }
 
-  async create(schoolData: any) {
+  async create(db: Connection, schoolData: any) {
+    const School = this.getSchoolModel(db);
     return await School.create(schoolData);
   }
 
-  async createSession(sessionData: any) {
+  async setBlockStatus(db: Connection, id: string, isBlocked: boolean) {
+    const School = this.getSchoolModel(db);
+    return await School.findByIdAndUpdate(
+      id,
+      { $set: { isBlocked } },
+      { new: true }
+    ).select('-password');
+  }
+
+  async createSession(db: Connection, sessionData: any) {
+    const SchoolSession = this.getSchoolSessionModel(db);
     return await SchoolSession.create(sessionData);
   }
 
-  async checkVerificationAndSubdomain(
-    schoolId: string
-  ): Promise<{ success: boolean; message?: string; subDomain?: string }> {
+  async checkVerificationAndSubdomain(db: Connection, schoolId: string): Promise<{ success: boolean; message?: string; subDomain?: string }> {
+    const School = this.getSchoolModel(db);
     const school = await School.findById(schoolId).lean();
     if (!school) {
       return { success: false, message: 'School not found' };
     }
-
     const isValid = school.isVerified === true && !!school.subDomain?.trim();
     return isValid
       ? { success: true, subDomain: school.subDomain }

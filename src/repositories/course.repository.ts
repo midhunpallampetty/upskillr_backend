@@ -14,7 +14,7 @@ import { extractDbNameFromUrl } from '../utils/getSubdomain';
 import { StudentProgressSchema } from '../models/studentProgress.model';
 import { CertificateSchema } from '../models/certificate.model';
 // Import the existing Student model (not the schema)
-import { Student } from '../models/student.model'; // Adjust path as needed; this is your compiled model export
+import Student from '../models/studentschema.model'; // Adjust path as needed; this is your compiled model export
 import { log } from 'console';
 import cloudinary from '../config/cloudinary'; // Import the configured Cloudinary instance
 export class CourseRepository {
@@ -320,7 +320,6 @@ export class CourseRepository {
         let parsedExam = exam.toObject();
 
         const questionsArray = Array.isArray(parsedExam.questions) ? parsedExam.questions : [];
-        console.log('Exam Questions:', questionsArray); // Debug log
         const populatedQuestions = await Promise.all(
           questionsArray.map(async (questionId: any) => {
             const question = await Question.findOne({ _id: questionId, isDeleted: { $ne: true } });
@@ -361,8 +360,7 @@ export class CourseRepository {
       sectionsArray.map(async (sectionId: any) => {
         const section = await Section.findOne({ _id: sectionId, isDeleted: { $ne: true } });
         if (!section) return null;
-
-        // Safeguard for videos
+        // Safeguard for videos array
         const videosArray = Array.isArray(section.videos) ? section.videos : [];
         const populatedVideos = await Promise.all(
           videosArray.map(async (videoId: any) => {
@@ -374,9 +372,15 @@ export class CourseRepository {
         // Populate exam (with questions)
         let populatedExam = null;
         if (section.exam) {
+
           const exam = await Exam.findOne({ _id: section.exam, isDeleted: { $ne: true } });
+
           if (exam) {
-            const questionsArray = Array.isArray(exam?.questions) ? exam?.questions : [];
+               const examobj=exam.toObject();
+            const questionsArray = Array.isArray(examobj?.questions) ? examobj?.questions : [];
+         
+                                        console.log(examobj.questions,'sectionsectionsection')
+
             const populatedQuestions = await Promise.all(
               questionsArray.map(async (questionId: any) => {
                 const question = await Question.findOne({ _id: questionId, isDeleted: { $ne: true } });
@@ -404,7 +408,7 @@ export class CourseRepository {
       finalExam: populatedFinalExam,  // New: populated final exam
       preliminaryExam: populatedPreliminaryExam  // New: populated preliminary exam
     };
-
+console.log(finalCourse,'finalCoursefinalCourse')
     return finalCourse;
   }
 
@@ -847,8 +851,8 @@ async issueCertificate(schoolName: string, studentId: string, courseId: string):
     const db = mongoose.connection.useDb(schoolName);
     const Certificate = db.model('Certificate', CertificateSchema);
     const Course = db.model<ICourse>('Course', CourseSchema);
-
-    const student = await Student.findById(studentId);
+    const Students=db.model('Student',Student)
+    const student = await Students.findById(studentId);
     const course = await Course.findById(courseId);
     if (!student || !course) {
       throw new Error('Student or Course not found');
@@ -858,7 +862,7 @@ async issueCertificate(schoolName: string, studentId: string, courseId: string):
 
     const puppeteer = require('puppeteer');
     const cloudinary = require('cloudinary').v2; // Assume configured
-
+const fullName = student.fullName.toUpperCase(); // Ensure name is uppercase for consistency
     // Define HTML template (same as issueCertificate; customize as needed)
     const htmlContent = `
       <html>
@@ -877,7 +881,7 @@ async issueCertificate(schoolName: string, studentId: string, courseId: string):
           <div class="certificate">
             <h1>Certificate of Completion</h1>
             <p>This certifies that</p>
-            <h2>${student.fullName}vfdvdf</h2>
+            <h2>${fullName}</h2>
             <p>has successfully completed the course</p>
             <h2>${course.courseName}</h2>
             <p class="date">Issued on ${dateIssued}</p>

@@ -13,7 +13,7 @@ export class CommentController {
         return res.status(400).json({ message: 'Missing required fields' });
       }
 
-      const subdomain = `http://${schoolName}.localhost:5173`;
+      const subdomain = `https://${schoolName}.eduvia.space`;
       const school = await School.findOne({ subDomain: subdomain });
       const schoolId = school?._id?.toString();
 
@@ -29,6 +29,7 @@ export class CommentController {
     try {
       const { courseId } = req.params;
       const data = await this.commentService.getCourseCommentsWithReplies(courseId);
+      console.log("data in controller")
       res.json(data);
     } catch (err) {
       res.status(500).json({ message: 'Failed to fetch comments', error: err });

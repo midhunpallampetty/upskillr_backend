@@ -56,6 +56,7 @@ async getQuestionWithAnswers(questionId: string) {
 
   // Get answers
   const answers = await this.answerRepo.findByQuestionIdWithAuthor(questionId);
+console.log(answers,"doc")
 
   // For each answer, fetch its assets and replies
   const answersWithAssetsAndReplies = await Promise.all(
@@ -75,7 +76,6 @@ async getQuestionWithAnswers(questionId: string) {
           };
         })
       );
-
       return {
         ...normalizeDoc(answer),
         assets: answerAssets,
@@ -102,6 +102,26 @@ async getQuestionWithAnswers(questionId: string) {
       };
     }));
   }
+async getQuestionById(id: string): Promise<Question | null> {
+  try {
+    const question = await this.questionRepo.findByIdWithAuthor(id);
+    if (!question) return null;
+
+    const assets = await this.assetRepo.findByQuestionId(id);
+
+    // Normalize to plain object (consistent with your other methods)
+    const normalizeDoc = (doc: any) =>
+      typeof doc?.toObject === "function" ? doc.toObject() : doc;
+
+    return {
+      ...normalizeDoc(question),
+      assets,
+    };
+  } catch (error) {
+    console.error('Error fetching question by ID:', error);
+    throw error;
+  }
+}
 
   // Get all replies for a specific answer (threaded), with images
   async getRepliesForAnswer(answerId: string) {

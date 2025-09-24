@@ -63,11 +63,11 @@ export class SchoolService {
     if (!school) return; // do not reveal user existence
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 1000 * 60 * 10);
+const expiry = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
     await this.schoolRepository.saveResetToken(school._id, token, expiry);
 
-    const resetLink = `http:eduvia.space/school/reset-password?token=${token}&email=${email}`;
+    const resetLink = `https:eduvia.space/school/reset-password?token=${token}&email=${email}`;
 
     await sendEmail({
       to: email,
@@ -213,5 +213,45 @@ async getAllSchools(filters: {
 
   async checkSchoolStatusService(id: string) {
     return await this.schoolRepository.checkVerificationAndSubdomain(id);
+  }
+   async setBlockStatus(id: string, isBlocked: boolean) {
+    const school = await this.schoolRepository.findById(id);
+    if (!school) throw new Error('School not found');
+
+    if (school.isBlocked === isBlocked) {
+      throw new Error(`School is already ${isBlocked ? 'blocked' : 'unblocked'}`);
+    }
+
+    const updatedSchool = await this.schoolRepository.setBlockStatus(id, isBlocked);
+
+    // Send email notification
+    try {
+      const subject = isBlocked ? 'Account Blocked – Upskillr' : 'Account Unblocked – Upskillr';
+      const html = isBlocked 
+        ? `
+            <h2>Hello ${updatedSchool.name},</h2>
+            <p>Your school account has been blocked by the admin.</p>
+            <p>If you believe this is an error, please contact support.</p>
+            <br/>
+            <p>– Team Upskillr</p>
+          `
+        : `
+            <h2>Hello ${updatedSchool.name},</h2>
+            <p>Your school account has been unblocked by the admin.</p>
+            <p>You can now access your account normally.</p>
+            <br/>
+            <p>– Team Upskillr</p>
+          `;
+
+      await sendEmail({
+        to: updatedSchool.email,
+        subject,
+        html,
+      });
+    } catch (err) {
+      console.error('Email sending failed during block status update:', err);
+    }
+
+    return updatedSchool;
   }
 }

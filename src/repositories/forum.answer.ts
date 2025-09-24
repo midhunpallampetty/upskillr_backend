@@ -28,7 +28,7 @@ export class ForumAnswerRepository {
 
   async findByQuestionIdWithAuthor(questionId: string) {
     return ForumAnswer.find({ forum_question_id: questionId })
-      .populate('author')
+     
       .select('+isDeleted') // Ensure isDeleted is included
       .sort({ createdAt: 1 })
       .lean();

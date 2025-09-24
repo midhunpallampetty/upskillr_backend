@@ -12,7 +12,6 @@ export class ForumQuestionRepository {
 
   async findByIdWithAuthor(id: string) {
     return ForumQuestion.findById(id)
-      .populate('author')
       .select('+isDeleted') // Explicitly include isDeleted if hidden
       .lean();
   }
@@ -30,11 +29,10 @@ export class ForumQuestionRepository {
   async findAllWithAuthor() {
     // Get all questions with author populated, including isDeleted
     const questions = await ForumQuestion.find()
-      .populate('author') // already works for Student/School
       .select('+isDeleted') // Explicitly include isDeleted
       .sort({ createdAt: -1 })
       .lean();
-
+console.log(questions,"questioins")
     // Collect question IDs
     const questionIds = questions.map(q => q._id);
 
