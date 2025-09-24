@@ -5,7 +5,7 @@ const schoolSchema = new mongoose.Schema(
     name: { type: String, required: true }, 
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-
+     isBlocked: { type: Boolean, default: false },
     experience: { type: String, required: true },
     isVerified: { type: Boolean, default: false },
     subDomain: { type: String, default: null },

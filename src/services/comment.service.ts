@@ -19,6 +19,7 @@ export class CommentService {
 
   async getCourseCommentsWithReplies(courseId: string) {
     const comments = await this.commentRepository.findByCourseId(courseId);
+    console.log(comments, "comments")
     const commentMap: Record<string, any> = {};
     const topLevel: any[] = [];
 
@@ -37,7 +38,7 @@ export class CommentService {
         topLevel.push(comment);
       }
     });
-
+console.log(topLevel, "top level comments with replies")
     return topLevel;
   }
 
@@ -54,7 +55,7 @@ export class CommentService {
 
     if (!comment.likes.map(String).includes(userId)) {
       comment.likes.push(new Types.ObjectId(userId));
-      return await this.commentRepository.updateLikes(commentId, comment.likes);
+      return await this.commentRepository.updateLikes(commentId, comment.likes.map(String));
     }
 
     return comment;
@@ -65,6 +66,6 @@ export class CommentService {
     if (!comment) throw new Error('Comment not found');
 
     comment.likes = comment.likes.filter((id) => id.toString() !== userId);
-    return await this.commentRepository.updateLikes(commentId, comment.likes);
+    return await this.commentRepository.updateLikes(commentId, comment.likes.map(String));
   }
 }
